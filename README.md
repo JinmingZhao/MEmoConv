@@ -12,10 +12,7 @@ youtube-dl --ignore-errors -c -f bestvideo+bestaudio --merge-output-format mp4 -
 目标是1000个对话，一部电视剧挑选20个对话(20/3=7集左右)，共需要50部电视剧。
 
 1. 下载电视剧 奋斗 看了几集，有很多质量比较高的对话
-https://www.youtube.com/watch?v=AAT5NepFkaQ&list=PLwqZU7cJTZQ_uVVudaXaxIZ6O4xaUtARb&index=2
+https://www.youtube.com/watch?v=AAT5NepFkaQ&list=PLwqZU7cJTZQ_uVVudaXaxIZ6O4xaUtARb
 
-2. 匆匆那年
-https://www.youtube.com/watch?v=SDADaoXmtcQ&list=PLn8V6LgDVrvJ3SAHEtI4i6hEL_ODIulko&index=6
-
-3. 都挺好 --
-https://www.youtube.com/watch?v=YtzqsA-a8MM&list=PLQqbdnAgoRmYhfPJgYB9YQxDsNQ-ErQBd&index=1
+2. 都挺好 --
+https://www.youtube.com/watch?v=YtzqsA-a8MM&list=PLQqbdnAgoRmYhfPJgYB9YQxDsNQ-ErQBd
