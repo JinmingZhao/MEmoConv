@@ -37,13 +37,13 @@ def save_annot_format(movie_name, movie_instancess, annot_format_output_path):
     表头: 
     UtteranceId	StartTime EndTime Text Speaker(First Speaker as A else B)	EmoAnnotator1	EmoAnnotator2	EmoAnnotator3																			
     '''
-    movie_instancess.insert(0, ['UtteranceId', 'StartTime', 'EndTime', 'Text', 'Speaker(First Speaker as A else B)', 'EmoAnnotator1', 'EmoAnnotator2', 'EmoAnnotator3'])
+    movie_instancess.insert(0, ['UtteranceId', 'StartTime', 'EndTime', 'Text', 'Speaker(First Speaker as A else B)', 'EmoAnnotator1', 'Note'])
     write_xls(annot_format_output_path, movie_name, movie_instancess)
 
 if __name__ == '__main__':
     root_dir = '/Users/jinming/Desktop/works/memoconv_annot'
-    movie_name = 'xinlianaishidai'
-    annot_format_output_path = os.path.join(root_dir, movie_name + '.xlsx')
+    movie_name = 'xiaohuanxi'
+    annot_format_output_path = os.path.join(root_dir, movie_name + '_anno1' + '.xlsx')
     movie_dir = os.path.join(root_dir, movie_name)
     dialognames = os.listdir(movie_dir)
     movie_instancess = []

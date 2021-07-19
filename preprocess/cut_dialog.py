@@ -48,8 +48,8 @@ class VideoCutterOneClip():
         '''
         start: mm:ss:ms
         '''
-        # _cmd = 'ffmpeg -ss {} -t {} -i {} -c:v libx264 -c:a aac -strict experimental -b:a 180k {} -y'
-        _cmd = 'ffmpeg -ss {} -t {} -i {} -c:v libx264 -c:a aac -strict experimental -b:a 180k {} -y >/dev/null 2>&1 '
+        _cmd = 'ffmpeg -ss {} -t {}  -threads 2 -i {} -max_muxing_queue_size 1024 -c:v libx264 -c:a aac -strict experimental -b:a 180k {} -y'
+        # _cmd = 'ffmpeg -ss {} -t {}  -i {} -c:v libx264 -c:a aac -strict experimental -b:a 180k {} -y >/dev/null 2>&1 '
         save_path = os.path.join(self.save_root, f"{movie_name}_{int(index)}.mp4")
         if not os.path.exists(save_path):
             print('doing cut video')
@@ -61,11 +61,14 @@ class VideoCutterOneClip():
 
 if __name__ == '__main__':    
     # modify this
-    movie_name = 'xinlianaishidai'
-
-    raw_movies_dir = '/Users/jinming/Desktop/works/memoconv_rawmovies'
-    conv_movies_dir = '/Users/jinming/Desktop/works/memoconv_convs'
-    segment_info_path = os.path.join(raw_movies_dir, '多模态对话数据集对话选取.xlsx')
+    movie_name = 'xiaohuanxi'
+    raw_movies_dir = '/data9/memoconv/memoconv_rawmovies'
+    conv_movies_dir = '/data9/memoconv/memoconv_convs/{}'.format(movie_name)
+    # raw_movies_dir = '/Users/jinming/Desktop/works/memoconv_rawmovies'
+    # conv_movies_dir = '/Users/jinming/Desktop/works/memoconv_convs/{}'.format(movie_name)
+    if not os.path.exists(conv_movies_dir):
+        os.mkdir(conv_movies_dir)
+    segment_info_path = os.path.join(raw_movies_dir, 'dialog_selection_round1.xlsx')
     cutter =  VideoCutterOneClip(save_root=conv_movies_dir)
     all_instances = read_xls(segment_info_path, movie_name, skip_rows=1)
     for instance in all_instances:
@@ -81,3 +84,4 @@ if __name__ == '__main__':
         video_path = os.path.join(raw_movies_dir, movie_name + '{:02d}'.format(episode) + '.mp4')
         save_path = cutter(video_path, movie_name, index, start_time, end_time)
         print(save_path)
+        break
