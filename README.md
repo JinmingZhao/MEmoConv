@@ -16,3 +16,9 @@ https://www.youtube.com/watch?v=AAT5NepFkaQ&list=PLwqZU7cJTZQ_uVVudaXaxIZ6O4xaUt
 
 2. 都挺好 --
 https://www.youtube.com/watch?v=YtzqsA-a8MM&list=PLQqbdnAgoRmYhfPJgYB9YQxDsNQ-ErQBd
+
+
+## 更新ffmpeg -- 之前配置的 2.8.7 版本不行
+还是很麻烦的
+https://blog.csdn.net/yuxielea/article/details/103146362
+source deactivate vlbert
