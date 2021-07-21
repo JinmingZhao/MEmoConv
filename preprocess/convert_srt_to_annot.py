@@ -42,7 +42,7 @@ def save_annot_format(movie_name, movie_instancess, annot_format_output_path):
 
 if __name__ == '__main__':
     root_dir = '/Users/jinming/Desktop/works/memoconv_annot'
-    movie_name = 'xiaohuanxi'
+    movie_name = 'xiayizhanshixingfu'
     annot_format_output_path = os.path.join(root_dir, movie_name + '_anno1' + '.xlsx')
     movie_dir = os.path.join(root_dir, movie_name)
     dialognames = os.listdir(movie_dir)

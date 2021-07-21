@@ -2,7 +2,9 @@ import os
 import openpyxl
 
 '''
-根据表格里面的片段信息和剧集信息，进行切割，并且编号，每个dialog保存为一个文件。
+Step1:  根据表格里面的片段信息和剧集信息，进行切割，并且编号，每个dialog保存为一个文件。
+如果因为数据格式报错的话，可以 ffmpeg -i xiaohuanxi01_back.mp4 -vcodec h264 -acodec aac xiaohuanxi01.mp4 手动转一下格式。
+
 切割的命令: 
 时间格式: hh:mm:ss.xxx
 start: (float(hour) * 3600 + float(minite) * 60 + float(second))
@@ -24,7 +26,8 @@ def read_xls(filepath, sheetname, skip_rows=0):
     return all_rows[skip_rows:]
 
 class VideoCutterOneClip():
-    ''' 按句子的timestamp切分视频, 一次切一个视频片段出来
+    ''' 
+    按句子的timestamp切分视频, 一次切一个视频片段出来
         save_root: 切出来的视频放在哪里, 
         padding: 每句话两端的padding时间
         return: sub_video_dir
@@ -34,9 +37,10 @@ class VideoCutterOneClip():
         self.save_root = save_root
 
     def calc_time(self, time):
+        # ShotCut 的时间格式 hh:mm:ss.frames
         str_time = str(time)
-        hour, minute, second, ms = str_time.split(':')
-        return float(minute) * 60 + float(second) + float(ms) * 0.01
+        hour, minute, second, frames = str_time.split(':')
+        return float(minute) * 60 + float(second) + float(frames*40) * 0.001
     
     def strptime(self, seconds):
         hour, minite, second = 0, 0, 0
@@ -48,7 +52,7 @@ class VideoCutterOneClip():
         '''
         start: mm:ss:ms
         '''
-        _cmd = 'ffmpeg -ss {} -t {}  -threads 2 -i {} -max_muxing_queue_size 1024 -c:v libx264 -c:a aac -strict experimental -b:a 180k {} -y'
+        _cmd = 'ffmpeg -ss {} -t {}  -threads 2 -i {}  -c:v libx264 -c:a aac -strict experimental -b:a 180k {} -y'
         # _cmd = 'ffmpeg -ss {} -t {}  -i {} -c:v libx264 -c:a aac -strict experimental -b:a 180k {} -y >/dev/null 2>&1 '
         save_path = os.path.join(self.save_root, f"{movie_name}_{int(index)}.mp4")
         if not os.path.exists(save_path):
@@ -61,7 +65,7 @@ class VideoCutterOneClip():
 
 if __name__ == '__main__':    
     # modify this
-    movie_name = 'xiaohuanxi'
+    movie_name = 'fendou'
     raw_movies_dir = '/data9/memoconv/memoconv_rawmovies'
     conv_movies_dir = '/data9/memoconv/memoconv_convs/{}'.format(movie_name)
     # raw_movies_dir = '/Users/jinming/Desktop/works/memoconv_rawmovies'
@@ -81,7 +85,12 @@ if __name__ == '__main__':
         episode = int(episode)
         start_time = startTime.value
         end_time = endTime.value
-        video_path = os.path.join(raw_movies_dir, movie_name + '{:02d}'.format(episode) + '.mp4')
+        if os.path.exists(os.path.join(raw_movies_dir, movie_name + '{:02d}'.format(episode) + '.mp4')):
+            video_path = os.path.join(raw_movies_dir, movie_name + '{:02d}'.format(episode) + '.mp4')
+        if os.path.exists(os.path.join(raw_movies_dir, movie_name + '{:02d}'.format(episode) + '.rmvb')):
+            video_path = os.path.join(raw_movies_dir, movie_name + '{:02d}'.format(episode) + '.rmvb')
+        if os.path.exists(os.path.join(raw_movies_dir, movie_name + '{:02d}'.format(episode) + '.mkv')):
+            video_path = os.path.join(raw_movies_dir, movie_name + '{:02d}'.format(episode) + '.mkv')
+        print(video_path)
         save_path = cutter(video_path, movie_name, index, start_time, end_time)
         print(save_path)
-        break
