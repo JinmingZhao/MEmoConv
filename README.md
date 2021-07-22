@@ -18,7 +18,15 @@ https://www.youtube.com/watch?v=AAT5NepFkaQ&list=PLwqZU7cJTZQ_uVVudaXaxIZ6O4xaUt
 https://www.youtube.com/watch?v=YtzqsA-a8MM&list=PLQqbdnAgoRmYhfPJgYB9YQxDsNQ-ErQBd
 
 
-## 更新ffmpeg -- 之前配置的 2.8.7 版本不行
+## Leo emobert docker 更新ffmpeg -- 之前配置的 2.8.7 版本不行
 还是很麻烦的
 https://blog.csdn.net/yuxielea/article/details/103146362
 source deactivate vlbert
+
+## ffmpeq 抽取语音信号
+cd /Users/jinming/Desktop/works/memoconv_convs/fendou
+ffmpeg -i fendou_2.mp4 -vn -f wav -acodec pcm_s16le -ac 1 -ar 16000 fendou_2.wav
+
+## 采用讯飞的语音转写功能，使用双人对话场景，可以生成说话人，可以生成每个词对应的时间戳，完美契合我们的场景。
+目前的讯飞听见的字幕生成、讯飞听见都不行。
+等待开发者API的返回结果看看咋样。 --垃圾

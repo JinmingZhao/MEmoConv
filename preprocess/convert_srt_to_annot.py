@@ -1,4 +1,5 @@
 import os
+import math
 from FileOps import read_file, write_xls
 
 '''
@@ -15,7 +16,18 @@ conver the srt to the, every 4 lines
 ----
 '''
 
+def trans_ms_frames(str_time, is_start):
+    # 如果是开始，那么向小的取整数，如果是结束，那么向大的取整数. 保证内容都包含在时间周期内。
+    other, ms = str_time.split(',')
+    if is_start:
+        frames = math.floor(int(ms)/40)
+    else:
+        frames = math.ceil(int(ms)/40)
+    new_str_time = '{}:{:02d}'.format(other, frames)
+    return new_str_time
+
 def read_srt(filepath):
+    # 将时间信息中的毫秒转化为 frames, 跟ShotCut的时间格式一样，方便定位。
     all_instances = []
     lines = read_file(filepath)
     dialogId = filepath.split('/')[-1].replace('.srt', '')
@@ -25,6 +37,9 @@ def read_srt(filepath):
             continue
         timestamp = lines[i+1]
         start_time, end_time = timestamp.split(' --> ')
+        # modify ms to frames
+        start_time = trans_ms_frames(start_time, is_start=True)
+        end_time = trans_ms_frames(end_time, is_start=False)
         textInfo = lines[i+2]
         uttId = dialogId + '_' + str(uttIdx)
         all_instances.append([uttId, start_time, end_time, textInfo])
@@ -50,6 +65,9 @@ if __name__ == '__main__':
     for dialog_idx in range(1, len(dialognames)+1):
         dialogname = movie_name + '_' + str(dialog_idx) + '.srt'
         filepath = os.path.join(movie_dir, dialogname)
+        if not os.path.exists(filepath):
+            print('{} not exist'.format(filepath))
+            continue
         dialog_instances = read_srt(filepath)
         print('Done {} {} utterances'.format(dialogname, len(dialog_instances)))
         movie_instancess.extend(dialog_instances)
