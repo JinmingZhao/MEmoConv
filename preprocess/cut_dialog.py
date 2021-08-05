@@ -63,19 +63,18 @@ class VideoCutterOneClip():
 
 if __name__ == '__main__':
     # modify this
-    # movie_names = ['huanlesong', 'xiaohuanxi', 'anjia', 'guainiguofenmeili']
-    movie_names =['yijiarenzhiming', 'xiangjianni', 'wanmeiguanxi', 'zuimeideshiguang', 'yujianwanglichuan', 'jiayouernv', 'shanhaiqing', 'xiayizhanshixingfu', \
-    'doutinghao', 'xiaoshede', 'xinlianaishidai', 'fumuaiqing', 'haoxiansheng', 'banshimitangbanshishang', 'huijiadeyouhuo', 'yueguangbanzouqu', 'rucikeaidewomen', \
-    'qinaidereaide']
+    # movie_names = ['shaonianpai', 'bianchengnidenayitian', 'xueselangman', \
+    #     'womendexinshidai', 'jinhun', 'xiaozhangfu', 'waixiangren', 'jiayounishizuibangde']
+    movie_names = ['zhengyangmenxia']
     for movie_name in movie_names:
         print('Current {}'.format(movie_name))
-        raw_movies_dir = '/data9/memoconv/memoconv_rawmovies'
-        conv_movies_dir = '/data9/memoconv/memoconv_convs/{}'.format(movie_name)
-        # raw_movies_dir = '/Users/jinming/Desktop/works/memoconv_rawmovies'
-        # conv_movies_dir = '/Users/jinming/Desktop/works/memoconv_convs/{}'.format(movie_name)
+        # raw_movies_dir = '/data9/memoconv/memoconv_rawmovies'
+        # conv_movies_dir = '/data9/memoconv/memoconv_convs/{}'.format(movie_name)
+        raw_movies_dir = '/Users/jinming/Desktop/works/memoconv_rawmovies'
+        conv_movies_dir = '/Users/jinming/Desktop/works/memoconv_convs/{}'.format(movie_name)
         if not os.path.exists(conv_movies_dir):
             os.mkdir(conv_movies_dir)
-        segment_info_path = os.path.join(raw_movies_dir, 'dialog_selection_round1.xlsx')
+        segment_info_path = os.path.join(raw_movies_dir, 'dialog_selection_round2.xlsx')
         cutter =  VideoCutterOneClip(save_root=conv_movies_dir)
         all_instances = read_xls(segment_info_path, movie_name, skip_rows=1)
         for instance in all_instances:

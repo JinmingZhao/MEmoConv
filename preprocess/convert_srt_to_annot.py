@@ -57,19 +57,21 @@ def save_annot_format(movie_name, movie_instancess, annot_format_output_path):
 
 if __name__ == '__main__':
     root_dir = '/Users/jinming/Desktop/works/memoconv_annot'
-    movie_name = 'xiayizhanshixingfu'
+    movie_name = 'womendexinshidai'
     annot_format_output_path = os.path.join(root_dir, movie_name + '_anno1' + '.xlsx')
-    movie_dir = os.path.join(root_dir, movie_name)
-    dialognames = os.listdir(movie_dir)
+    annot_dir = os.path.join(root_dir, movie_name)
+    dialognames = os.listdir(annot_dir)
+    count_valid_dialogs = 0
     movie_instancess = []
-    for dialog_idx in range(1, len(dialognames)+1):
+    for dialog_idx in range(1, 25):
         dialogname = movie_name + '_' + str(dialog_idx) + '.srt'
-        filepath = os.path.join(movie_dir, dialogname)
+        filepath = os.path.join(annot_dir, dialogname)
         if not os.path.exists(filepath):
             print('{} not exist'.format(filepath))
             continue
+        count_valid_dialogs += 1
         dialog_instances = read_srt(filepath)
         print('Done {} {} utterances'.format(dialogname, len(dialog_instances)))
         movie_instancess.extend(dialog_instances)
-    print('\t there are total {} dialogs {} utterances'.format(len(dialognames), len(movie_instancess)))
+    print('\t there are total {} dialogs {} utterances'.format(count_valid_dialogs, len(movie_instancess)))
     save_annot_format(movie_name, movie_instancess, annot_format_output_path)
