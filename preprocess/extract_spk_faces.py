@@ -178,7 +178,7 @@ def visual_high_quality_face(talkout_dialog_dir, spk2active_high_quality):
 # step2: 不要根据 tracks 中的人脸进行聚类，而是根据所有的人脸进行聚类。如果说话人A的脸跟聚类中心1的脸的相似度比较高，并且说话人A的脸跟聚类中心2的脸相似度比较低，那么可以确定两堆那个是A哪个是B.
 # 如果一个句子中没有说话人的人脸，做好标记，是为其他人的脸，非说话人也能反映当前说话人的情感，可以进行对比。# step3: 
 
-def get_embeedings_face(model, face_filepath):
+def get_face_embeeding(model, face_filepath):
     '''
     利用 insightface 获取face的embeedding
     '''
@@ -206,7 +206,14 @@ if __name__ == '__main__':
             visual_high_quality_face(cur_dialog_dir, spk2active_high_quality)
     
     if True:
-        model = 
+        model_path = '/data9/memoconv/tools/facerecog/webface_r50.onnx'
+        import cv2
+        import numpy as np
+        import insightface
+        from insightface.app import FaceAnalysis
+        from insightface.data import get_image as ins_get_image
+        handler = insightface.model_zoo.get_model(model_path)
+        handler.prepare(ctx_id=0) 
         for dialog_id in dialog2spk2timestamps.keys():
             print('current {}'.format(dialog_id))
-            get_embeedings_faces
+            get_spk_top_face_embeddings(handler)
