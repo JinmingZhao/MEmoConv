@@ -18,6 +18,7 @@ conver the srt to the, every 4 lines
 
 def trans_ms_frames(str_time, is_start):
     # 如果是开始，那么向小的取整数，如果是结束，那么向大的取整数. 保证内容都包含在时间周期内。
+    # 这里会有一些误差，因为有些数据的 fps 并不是 25，比如fps=50，那么 毫秒/40 就少了很多帧。
     other, ms = str_time.split(',')
     if is_start:
         frames = math.floor(int(ms)/40)
