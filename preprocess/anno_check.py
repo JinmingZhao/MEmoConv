@@ -820,7 +820,7 @@ if __name__ == '__main__':
         low_sim_simple_personindex_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic_PIndex_simple.xlsx'
         collections_low_sim_personIndex_dialogs(movies_names, movie2annotators, low_sim_filepath, low_sim_simple_filepath, low_sim_simple_personindex_filepath)
     
-    if True:
+    if False:
         spk_format_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/dialogSpkAnno.xlsx'
         for movie_name in movies_names:
             anno3_path = '/Users/jinming/Desktop/works/memoconv_labels/{}_anno3_done.xlsx'.format(movie_name)

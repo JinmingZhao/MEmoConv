@@ -21,7 +21,7 @@ https://www.youtube.com/watch?v=YtzqsA-a8MM&list=PLQqbdnAgoRmYhfPJgYB9YQxDsNQ-Er
 ## Leo emobert docker 更新ffmpeg -- 之前配置的 2.8.7 版本不行
 还是很麻烦的
 https://blog.csdn.net/yuxielea/article/details/103146362
-source deactivate vlbert
+配置 x264 和 环境
 
 ## ffmpeq 抽取语音信号
 cd /Users/jinming/Desktop/works/memoconv_convs/fendou
