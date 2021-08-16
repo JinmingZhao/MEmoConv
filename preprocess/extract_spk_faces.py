@@ -100,7 +100,6 @@ def get_spk_active_high_quality_info(talkout_dialog_dir, spk2timestamps):
     并进行剪切并保存改图片 topconf_faces/Atop1_frame_idx.jpg, ... , topconf_faces/Btop1_frame_idx.jpg.jpg, ...
     return: {'A':[frame2score, frame2bbox],  'A':[frame2score, frame2bbox]}
     '''
-    result = {}
     # 根据time_step得到那些帧属于SpeakerA 哪些帧属于 SpeakerB
     spk2frames = {}
     for spk in spk2timestamps.keys():
@@ -127,24 +126,26 @@ def get_spk_active_high_quality_info(talkout_dialog_dir, spk2timestamps):
             frame_id2score[frame_idx] = score
             frame_id2bbox[frame_idx] = crop_bbox
     # 对每个spk内所有帧进行排序
+    result = {}
     spk2count = {}
     for spk in spk2frames.keys():
         s_frames = spk2frames[spk]
-        np.random.shuffle(s_frames)
         s_frame2score = collections.OrderedDict()
         s_frame2bbox = collections.OrderedDict()
-        count = 0
+        select_frames = []
+        # 选取得分大约0的帧
         for frame in s_frames:
             if frame_id2score.get(frame) is not None:
-                # 只用大于得分0的帧
                 if frame_id2score[frame] > 0:
-                    if count >= 10:
-                        continue
-                    s_frame2score[frame] = frame_id2score[frame]
-                    s_frame2bbox[frame] = frame_id2bbox[frame]
-                    count += 1
-        spk2count[spk] = count
-        result[spk] = [s_frame2score, s_frame2bbox]
+                    select_frames.append(frame_id2score[frame])
+        # 然后均匀采样
+        # if select_frames 
+        # if len(select_frames) > 50:
+        #     select_indexs = np.linspace(1, len(select_frames), 10, dtype=int)
+        #     select_frames = [select_frames[idx] for idx in select_indexs]
+        # for frame in select_frames:
+        spk2count[spk] = len(select_frames)
+        # result[spk] = [s_frame2score, s_frame2bbox]
     return result, spk2count
 
 def visual_high_quality_face(talkout_dialog_dir, spk2active_high_quality):
@@ -186,8 +187,9 @@ def get_one_face_embeeding(model, filepath):
     
 def check_sim(model, spk2topface_embeddings):
     '''
-    一般类似的都没问题，但是当从正面转成脸的时候，相似度从0.90降到0.18
-    采取top-frame的时候在score>0的里面进行均匀采样
+    存在问题: 
+        fendou_1: 但是当从正面转成侧脸脸的时候，相似度从0.90降到0.18. 同时 A 和 B 都是侧脸的时候相似度 0.22 所以这种方法不 Work.
+    方案2: 采取top-frame的时候在score>0的里面进行均匀采样
     '''
     spka_avg_emb = spk2topface_embeddings['A']['avg']
     spka_embs =  [spk2topface_embeddings['A'][fid] for fid in spk2topface_embeddings['A'].keys()]
@@ -211,7 +213,8 @@ def check_sim(model, spk2topface_embeddings):
     for i in range(len(spka_embs)):
         avgb_a = model.compute_sim(spka_embs[i], spkb_avg_emb)
         print('\t avgb and A-{} sim: {} '.format(i, avgb_a))
-    
+
+
 def get_spk_top_face_embeddings(model, top_faces_dir, spk_face_embeeding_filepath, do_check=False):
     '''
     {'A':{'avg':np, 'frameid':np}
@@ -246,7 +249,7 @@ if __name__ == '__main__':
 
     if True:
         # only run once
-        for movie_name in movies_names[0:1]:
+        for movie_name in movies_names[6:20]:
             print(f'Current movie {movie_name}')
             meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
             talkout_dialog_dir = '/data9/memoconv/memoconv_convs_talknetoutput/{}'.format(movie_name)
@@ -259,12 +262,14 @@ if __name__ == '__main__':
                 cur_dialog_dir = os.path.join(talkout_dialog_dir, dialog_id)
                 os.system('rm -r {}/top_faces'.format(cur_dialog_dir))
                 spk2active_high_quality, spk2count = get_spk_active_high_quality_info(cur_dialog_dir, dialog2spk2timestamps[dialog_id])
-                visual_high_quality_face(cur_dialog_dir, spk2active_high_quality)
-                if spk2count['A'] == 0 and spk2count['B'] == 0:
-                    count_no_spk += 1
-                elif spk2count['A'] == 0 or spk2count['B'] == 0:
-                    count_one_spk += 1
-            print(f'count_no_spk {count_no_spk} count_one_spk {count_one_spk}')
+                print(spk2count)
+                # visual_high_quality_face(cur_dialog_dir, spk2active_high_quality)
+                # if spk2count['A'] == 0 and spk2count['B'] == 0:
+                #     count_no_spk += 1
+                # elif spk2count['A'] == 0 or spk2count['B'] == 0:
+                #     count_one_spk += 1
+            # print(f'count_no_spk {count_no_spk} count_one_spk {count_one_spk}')
+
 
     if False:
         # step1
@@ -283,6 +288,9 @@ if __name__ == '__main__':
                 spk_face_embeeding_filepath = os.path.join(top_faces_dir, 'spk2embeddding.pkl')
                 get_spk_top_face_embeddings(model, top_faces_dir, spk_face_embeeding_filepath, do_check=True)
                 break
+    if True:
+        # cluster_one_dialog()
+        pass
 
 # step1: 计算每个对话中两个说话人的向量的平均值作为改说话人的 ground-truth. 
 # step2: case1: 如果一个画面中只有一个人脸，判断是A还是B。保存跟A和B的得分。
