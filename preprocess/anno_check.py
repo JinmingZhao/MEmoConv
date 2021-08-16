@@ -656,13 +656,12 @@ def collections_low_sim_personIndex_dialogs(movies_names, movie2annotators, low_
         all_instances.extend(instances)
         for dialog_id in low_sim_dialogs2score:
             all_instances_simple.append([movie_name, dialog_id, annotators[0], annotators[1], annotators[2], low_sim_dialogs2score[dialog_id]])
-        print(movie_name, len(low_sim_dialogs2score))
     write_xls(low_sim_filepath, 'sheet1', all_instances)
     write_xls(low_sim_simple_filepath, 'sheet1', all_instances_simple)
     # 按person进行排序～
     anno2idialogs = collections.OrderedDict()
     for instance in all_instances_simple:
-        dialog_id, anno1, anno2, anno3 = instance[1].value, instance[2].value, instance[3].value, instance[4].value
+        dialog_id, anno1, anno2, anno3 = instance[1], instance[2], instance[3], instance[4]
         if anno2idialogs.get(anno1) is None:
             anno2idialogs[anno1] = [dialog_id]
         else:
@@ -705,32 +704,6 @@ def get_spk_anno_format(output_filepath, anno3_instances, movie_name):
         ws.append(each)
     wb.save(output_filepath)
 
-def write_meta_json_info():
-    '''
-    {'dialogId':
-        'spkA': xxx,
-        'spkB': xxx, 
-        'starttime_raw_episode': xxx
-        'endtime_raw_episode': xxx
-        {
-            uttId:{
-                'speaker': A
-                'starttime': xxx,
-                'endtime': xxx,
-                'duration': xxx,
-                'text': xxx,
-                'final_mul_emos': [],
-                'final_main_emo': [],
-                'annotator1': [],
-                'annotator2': [],
-                'annotator3': [],
-                'annotator4': []
-            }
-        }
-    }
-    '''
-    pass
-
 
 if __name__ == '__main__':
     if True:
@@ -740,7 +713,7 @@ if __name__ == '__main__':
     movies_names = read_file('movie_list.txt')
     movies_names = [movie_name.strip() for movie_name in movies_names]
 
-    if False:
+    if True:
         for movie_name in movies_names:
             anno1_path = '/Users/jinming/Desktop/works/memoconv_labels/{}_anno1_done.xlsx'.format(movie_name)
             if not os.path.exists(anno1_path):
