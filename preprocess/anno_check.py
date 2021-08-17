@@ -4,7 +4,7 @@ import numpy as np
 import collections
 import openpyxl
 import sklearn.metrics
-from FileOps import read_xls, write_xls, read_file
+from FileOps import read_xls, write_xls, read_file, write_csv
 from collections import Counter
 
 
@@ -350,6 +350,21 @@ def compute_fleiss_kappa(p1_emos, p2_emos, p3_emos):
     emo_list = ['Happy', 'Neutral', 'Sad', 'Anger', 'Disgust', 'Fear', 'Surprise', 'Other']
     rate = []
     for i in range(len(p1_emos)):
+        subject = [0] * len(emo_list)
+        subject[emo_list.index(p1_emos[i])] += 1
+        subject[emo_list.index(p2_emos[i])] += 1
+        subject[emo_list.index(p3_emos[i])] += 1
+        rate.append(subject)
+    kappa = fleissKappa(rate, 3)
+    return kappa
+
+def compute_fleiss_kappa_noother(p1_emos, p2_emos, p3_emos):
+    from fleiss import fleissKappa
+    emo_list = ['Happy', 'Neutral', 'Sad', 'Anger', 'Disgust', 'Fear', 'Surprise']
+    rate = []
+    for i in range(len(p1_emos)):
+        if p1_emos[i] == 'Other' or p2_emos[i] == 'Other' or p3_emos[i] == 'Other':
+            continue
         subject = [0] * len(emo_list)
         subject[emo_list.index(p1_emos[i])] += 1
         subject[emo_list.index(p2_emos[i])] += 1
@@ -714,7 +729,7 @@ if __name__ == '__main__':
     movies_names = [movie_name.strip() for movie_name in movies_names]
 
     if True:
-        for movie_name in movies_names:
+        for movie_name in movies_names[50:52]:
             anno1_path = '/Users/jinming/Desktop/works/memoconv_labels/{}_anno1_done.xlsx'.format(movie_name)
             if not os.path.exists(anno1_path):
                 continue
@@ -764,19 +779,17 @@ if __name__ == '__main__':
             p2_num_total_same, p2_num_main_same, p2_num_part_same = analyse_emotion_two_consistency(anno1_dialogs2emos, anno2_dialogs2emos, anno3_dialogs2emos)
             print('\t two people emo consistency: total_same {} main_same {} part_same {}'.format(p2_num_total_same, p2_num_main_same, p2_num_part_same))
 
-            if False:
+            if True:
                 # step5, 以anno3为标注，整理三个人的情感标注信息
                 get_clean_text_dialog(meta_fileapth, anno3_instances, anno1_dialogs2emos, anno2_dialogs2emos, anno3_dialogs2emos)
 
-            if False:
+            if True:
+                # step6, 根据step6整理的结果，尝试不同的决策策略
                 anno1_feedback_dialogs = get_feedback_dialog(anno1_instances)
                 anno2_feedback_dialogs = get_feedback_dialog(anno2_instances)
                 anno3_feedback_dialogs = get_feedback_dialog(anno3_instances)
                 print('feedback_dialogs anno1 {} anno2 {} anno3 {}'.format(anno1_feedback_dialogs, anno2_feedback_dialogs, anno3_feedback_dialogs))
                 feedback_dialogs2emos = get_feedback_ground_emos(anno1_dialogs2emos, anno2_dialogs2emos, anno3_dialogs2emos, anno1_feedback_dialogs, anno2_feedback_dialogs, anno3_feedback_dialogs)
-
-            if False:
-                # step6, 根据step6整理的结果，尝试不同的决策策略
                 fleiss_kappa, not_sure_count = get_final_decision(meta_fileapth, strategy_name='allin_pool', feedback_dialogs2emos=feedback_dialogs2emos, quality_scores=movie2quality[movie_name])
 
             if False:
@@ -792,8 +805,23 @@ if __name__ == '__main__':
         low_sim_simple_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic_simple.xlsx'
         low_sim_simple_personindex_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic_PIndex_simple.xlsx'
         collections_low_sim_personIndex_dialogs(movies_names, movie2annotators, low_sim_filepath, low_sim_simple_filepath, low_sim_simple_personindex_filepath)
-    
+
+    if True:
+        # 将 final-labels meta-excel 文件转化为 csv 文件进行保存, 在服务端读取会报错
+        for movie_name in movies_names:
+            meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels/meta_{}.xlsx'.format(movie_name)
+            csv_meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
+            all_instances = read_xls(meta_fileapth, sheetname='sheet1', skip_rows=0)
+            new_all_instances = []
+            print('Current {}'.format(movie_name))
+            for instance in all_instances:
+                temp = [cell.value for cell in instance]
+                assert len(temp[1].split(':')) and len(temp[2].split(':')) 
+                new_all_instances.append(temp)
+            write_csv(csv_meta_fileapth, new_all_instances, delimiter=';')
+
     if False:
+        # only once
         spk_format_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/dialogSpkAnno.xlsx'
         for movie_name in movies_names:
             anno3_path = '/Users/jinming/Desktop/works/memoconv_labels/{}_anno3_done.xlsx'.format(movie_name)
