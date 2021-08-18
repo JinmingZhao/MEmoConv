@@ -10,19 +10,21 @@ python demo.py extract --arch_type resnet50_ft --weight_file /Users/jinming/Desk
 import os
 import numpy as np
 import torch
+import torchvision
 import pickle
 from models.senet import senet50
 from models.resnet import resnet50
 from PIL import Image
 from numpy.linalg import norm
 
-mean_bgr = np.array([91.4953, 103.8827, 131.0912])
-def transform(img):
+def transform(img, mean_bgr=None):
+    if mean_bgr is None:
+        ## default 
+        mean_bgr = np.array([91.4953, 103.8827, 131.0912])
     img = img[:, :, ::-1] # RGB -> BGR
     img = img.astype(np.float32)
     img -= mean_bgr
     img = img.transpose(2, 0, 1) # C x H x W
-    # img = torch.from_numpy(img).float()
     return img
 
 def get_state_dict(mdoel_path):
@@ -39,6 +41,22 @@ def compute_sim(feat1, feat2):
 
 def compute_ed_sim(feat1, feat2):
     return np.linalg.norm(feat1 - feat2)
+
+def compute_mean_bgr(filepaths):
+    import cv2
+    per_image_Rmean = []
+    per_image_Gmean = []
+    per_image_Bmean = []
+    for filepath in filepaths:
+        img = cv2.imread(filepath, 1)
+        per_image_Bmean.append(np.mean(img[:,:,0]))
+        per_image_Gmean.append(np.mean(img[:,:,1]))
+        per_image_Rmean.append(np.mean(img[:,:,2]))
+    R_mean = np.mean(per_image_Rmean)
+    G_mean = np.mean(per_image_Gmean)
+    B_mean = np.mean(per_image_Bmean)
+    mean_bgr = np.array([B_mean, G_mean, R_mean])
+    return mean_bgr
 
 model_path = '/Users/jinming/Desktop/works/talknet_demos/facerecog/senet50_scratch_weight.pkl'
 model = senet50(num_classes=8631, include_top=False)
@@ -61,20 +79,21 @@ img3_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'A_000377_2.00.jpg
 img4_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'A_001007_0.70.jpg') #A-正脸
 # img4_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'B_000148_1.00.jpg') #B-正脸
 
+mean_bgr = compute_mean_bgr([img1_filepath,img2_filepath, img3_filepath, img4_filepath])
+print(mean_bgr)
 batch_imgs = []
 for img_filepath in [img1_filepath, img2_filepath, img3_filepath, img4_filepath]:
-    image = Image.open(img_filepath)
-    image = image.resize((224,224))
+    img = Image.open(img_filepath)
+    img = torchvision.transforms.Resize(256)(img)
+    img = torchvision.transforms.CenterCrop(224)(img)
     image = np.array(image, dtype=np.uint8)
-    image = transform(image)
+    image = transform(image, mean_bgr=mean_bgr)
     batch_imgs.append(image)
 batch_imgs = np.array(batch_imgs, dtype=np.uint8)
 batch_imgs = torch.from_numpy(batch_imgs).float()
-print(batch_imgs.size())
 outputs = model.forward(batch_imgs)
 outputs = outputs.view(outputs.size(0), -1).detach().numpy()
 print(outputs.shape)
-
 sim1 = compute_sim(outputs[0], outputs[1])
 sim2 = compute_sim(outputs[0], outputs[2])
 sim3 = compute_sim(outputs[1], outputs[2])
