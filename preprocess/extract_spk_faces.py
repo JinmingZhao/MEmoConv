@@ -91,33 +91,56 @@ def transtime2frames(timestamp):
     # print(timestamp, frames)
     return frames
 
-def extract_all_face(talkout_dialog_dir, spk2active_high_quality):
+def extract_all_face(talkout_dialog_dir):
     '''
     spk2active_high_quality = {'A':[frame2score, frame2bbox],  'A':[frame2score, frame2bbox]}
-    return: talkout_dialog_dir/top_faces
+    return: talkout_dialog_dir/pyfaces
     '''
-    # visualize the highquality faces 
-    visual_faces_dir = os.path.join(talkout_dialog_dir, 'top_faces')
+    frames_dir =  os.path.join(talkout_dialog_dir, 'pyframes')
+    visual_faces_dir = os.path.join(talkout_dialog_dir, 'pyfaces')
     if not os.path.exists(visual_faces_dir):
         os.mkdir(visual_faces_dir)
-    frames_dir = os.path.join(talkout_dialog_dir, 'pyframes')
-    for spk in spk2active_high_quality.keys():
-        spk_frame2score, spk_frame2bbox = spk2active_high_quality[spk]
-        assert len(spk_frame2score) == len(spk_frame2bbox)
-        # print(spk_frame2score)
-        # print(spk_frame2bbox)
-        for frame_id in spk_frame2bbox.keys():
-            # frame_id 从0开始的, ffmpeg 抽的帧是从 1 开始的，所以这里 frame_id + 1 对应的是真实的图片
-            frame_filepath = os.path.join(frames_dir, '{:06d}.jpg'.format(frame_id+1))
-            assert os.path.exists(frame_filepath) == True
-            face_filepath = os.path.join(visual_faces_dir, '{}_{:06d}_{:.2f}.jpg'.format(spk, frame_id, spk_frame2score[frame_id]))
+    faces_info_filepath = os.path.join(talkout_dialog_dir, 'pywork', 'faces.pckl')
+    faces = read_pkl(faces_info_filepath) # [segments, framesineachsegment]
+    frames = glob.glob(os.path.join(frames_dir, '*.jpg'))
+    assert len(faces) == len(frames)
+    count = 0
+    count_frames = 0
+    for frame_idx in range(len(faces)):
+        # frame_id 从0开始的, ffmpeg 抽的帧是从 1 开始的，所以这里 frame_id + 1 对应的是真实的图片
+        frame_filepath = os.path.join(frames_dir, '{:06d}.jpg'.format(frame_idx+1))
+        assert os.path.exists(frame_filepath) == True
+        if len(faces[frame_idx]) == 0:
+            continue
+        count_frames += 1
+        for face_idx in range(len(faces[frame_idx])):
+            face_filepath = os.path.join(visual_faces_dir, '{}_{}.jpg'.format(frame_idx, face_idx))
             img = cv2.imread(frame_filepath)
-            bbox = spk_frame2bbox[frame_id]
+            bbox = faces[frame_idx][face_idx]['bbox']
             x1, y1, x2, y2 = bbox  #分别是左上角的坐标和右下角的坐标
             # 如果坐标是负值, 设置为0, 卡到边界, 左上为(0,0)
             x1, y1 = max(x1, 0), max(y1, 0)
             face_crop = img[int(y1):int(y2), int(x1):int(x2)] # 进行截取
             cv2.imwrite(face_filepath, face_crop)
+            count += 1
+    print('total frames with faces {} and faces count {}'.format(count_frames, count))
+
+
+def extract_all_face_embedding(model, cur_dialog_dir):
+    '''
+    return: talkout_dialog_dir/all_faces_emb.pkl
+    {frameId_faceid(1_0): np.array([512])}
+    '''
+    visual_faces_dir = os.path.join(cur_dialog_dir, 'pyfaces')
+    face_emb_filepath = os.path.join(cur_dialog_dir, 'all_faces_emb.pkl')
+    face_filepaths = glob.glob(os.path.join(visual_faces_dir, '*.jpg'))
+    face2emb = collections.OrderedDict()
+    for face_filepath in face_filepaths:
+        assert os.path.exists(face_filepath) == True
+        emb = get_one_face_embeeding(model, face_filepath)
+        face_name = face_filepath.split('/')[-1][:-4]
+        face2emb[face_name] = emb
+    write_pkl(face_emb_filepath, face2emb)
 
 def get_spk_active_high_quality_info(talkout_dialog_dir, spk2timestamps):
     '''
@@ -292,18 +315,34 @@ if __name__ == '__main__':
     movies_names = [movie_name.strip() for movie_name in movies_names]
 
     if False:
-        # extract embedding of all faces, only in the utterance
-        for movie_name in movies_names[0:1]:
+        # extract all faces, only in the utterance
+        for movie_name in movies_names[1:]:
             print(f'Current movie {movie_name}')
             meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
             talkout_dialog_dir = '/data9/memoconv/memoconv_convs_talknetoutput/{}'.format(movie_name)
             dialog2spk2timestamps = get_spk2timestamps(meta_filepath)
-            for dialog_id in list(dialog2spk2timestamps.keys())[:5]:
+            for dialog_id in list(dialog2spk2timestamps.keys()):
                 print('current {}'.format(dialog_id))
                 cur_dialog_dir = os.path.join(talkout_dialog_dir, dialog_id)
-                os.system('rm -r {}/top_faces'.format(cur_dialog_dir))
-
+                extract_all_face(cur_dialog_dir)
     if True:
+        # CUDA_VISIBLE_DEVICES=3 python extract_spk_faces.py 
+        # extract all embedding the faces
+        import insightface
+        model_path = '/data9/memoconv/tools/facerecog/webface/webface_r50.onnx'
+        model = insightface.model_zoo.get_model(model_path)
+        model.prepare(ctx_id=0) # # given gpu id, if negative, then use cpu
+        for movie_name in movies_names[45:57]:
+            print(f'Current movie {movie_name}')
+            meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
+            talkout_dialog_dir = '/data9/memoconv/memoconv_convs_talknetoutput/{}'.format(movie_name)
+            dialog2spk2timestamps = get_spk2timestamps(meta_filepath)
+            for dialog_id in list(dialog2spk2timestamps.keys()):
+                print('current {}'.format(dialog_id))
+                cur_dialog_dir = os.path.join(talkout_dialog_dir, dialog_id)
+                extract_all_face_embedding(model, cur_dialog_dir)
+
+    if False:
         # only run once
         for movie_name in movies_names[0:1]:
             print(f'Current movie {movie_name}')
