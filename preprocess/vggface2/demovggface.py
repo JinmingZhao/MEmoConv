@@ -76,8 +76,8 @@ talkout_dialog_dir = '/Users/jinming/Desktop/works/talknet_demos/fendou_2/'
 img1_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'A_000001_0.10.jpg') #A-左侧脸
 img2_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'A_000101_0.80.jpg') #A-正脸
 img3_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'A_000377_2.00.jpg') #A-右侧脸
-img4_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'A_001007_0.70.jpg') #A-正脸
-# img4_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'B_000148_1.00.jpg') #B-正脸
+# img4_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'A_001007_0.70.jpg') #A-正脸
+img4_filepath = os.path.join(talkout_dialog_dir, 'top_faces', 'B_000148_1.00.jpg') #B-正脸
 
 mean_bgr = compute_mean_bgr([img1_filepath,img2_filepath, img3_filepath, img4_filepath])
 print(mean_bgr)
@@ -86,8 +86,8 @@ for img_filepath in [img1_filepath, img2_filepath, img3_filepath, img4_filepath]
     img = Image.open(img_filepath)
     img = torchvision.transforms.Resize(256)(img)
     img = torchvision.transforms.CenterCrop(224)(img)
-    image = np.array(image, dtype=np.uint8)
-    image = transform(image, mean_bgr=mean_bgr)
+    image = np.array(img, dtype=np.uint8)
+    image = transform(image, mean_bgr=None)
     batch_imgs.append(image)
 batch_imgs = np.array(batch_imgs, dtype=np.uint8)
 batch_imgs = torch.from_numpy(batch_imgs).float()
@@ -114,8 +114,9 @@ print('sim5 {:.2f}'.format(sim5))
 # renet50_scratch_weight
 #   sim(A-侧脸, B-侧脸)=0.7444999814033508, sim(A-侧脸, B-正脸)=0.5343000292778015, sim(B-侧脸, B-正脸)=0.6984000205993652 sim(B-正脸, B-正脸2) = 0.890757143497467
 
-# case2: senet50_scratch_weight A正脸和B正脸结果=0.53 和 A正脸和A正脸=0.51
-#   sim(A-侧脸1, A-正脸)=0.64, sim(A-侧脸1, A-侧脸2)=0.58, sim(A-正脸, A-侧脸2)=0.58 sim(A-侧脸2, B-正脸) = 0.43 sim(A-正脸, B-正脸) = 0.53
+# case2: senet50_scratch_weight 还是用 default-mean
+#   default mean; sim(A-侧脸1, A-正脸1)=0.73, sim(A-侧脸1, A-侧脸2)=0.71, sim(A-正脸, A-侧脸2)=0.59 sim(A-侧脸2, B-正脸) = 0.58  sim(A-正脸, B-正脸) = 0.53
+#   batch mean: sim(A-侧脸1, A-正脸1)=0.43, sim(A-侧脸1, A-侧脸2)=0.40, sim(A-正脸, A-侧脸2)=0.46 sim(A-侧脸2, B-正脸) = 0.55 sim(A-正脸, B-正脸) = 0.63
 
 # 怎么说呢，效果也不怎么样，所以还得充分利用已经检测出来的人脸，卡一个阈值。
-# 腾讯的对比结果比百度的要好 https://cloud.tencent.com/product/facerecognition
+# 腾讯的对比结果比百度的要好 https://cloud.tencent.com/product/facerecognition 但是都要收费还挺贵的。
