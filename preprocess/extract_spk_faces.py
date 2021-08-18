@@ -1,6 +1,5 @@
 '''
 具体来讲如果一个视频中只有一个人脸那么当前人脸就作为当前的视觉信息。如果当前视频帧包含两个人那么判断那个人是说话人。
-具体做法是首先将对话中比较显著的人脸检测出来，根据所在的时间确定属于A还是B，这样会得到A的几张脸，记作FaceA 和B的几张脸 记做 FaceB。
 Note: TalkNet 有对所有的视频进行帧率的转换，所以不需要考虑帧率的问题
 conda activate TalkNet / talknet
 
@@ -16,15 +15,15 @@ conda activate TalkNet / talknet
 [136, 136, 206, 206, 59, 939, 939]
 # 长度为7, 是视频crop的长度, 每个cropsegment内计算得分 
 >>>c = pkl.load(open('fendou_1/pywork/tracks.pckl', 'rb'))
->>>c[0]
-{'track': {'frame': [1,2,3,4,...], 'bbox':[[592.89569092,  73.52586365, 712.70178223, 211.90910339], ...]}
-'proc_track': {'x':[], 'y':[], 's':[]}}
-# 在tracks 和 scores 文件里面如果没有人脸，那么没有对应的人脸的 frame-id
+>>>c[0] {'track': {'frame': [1,2,3,4,...], 'bbox':[[592.89569092,  73.52586365, 712.70178223, 211.90910339], ...]}}
 
 # 人脸特征提取特征进行对比和聚类 --OnLeo
 https://github.com/deepinsight/insightface
 pip install -U insightface
 选用WebFace12M模型: https://drive.google.com/file/d/1N0GL-8ehw_bz2eZQWz2b0A5XBdXdxZhg/view?usp=sharing
+
+insightface 中的几个模型对于侧脸的检测效果很差, 但是在对话中如果两人同时出现的话，那么基本都是侧脸。
+所以采用 vggface2上训练的模型，senet50, 目前测试结果来看稍微好点。
 '''
 
 import glob
@@ -32,8 +31,6 @@ import os, cv2
 from re import T
 import numpy as np
 import collections
-
-from numpy.ma.core import flatten_structured_array
 import scipy as sp
 from FileOps import read_csv, read_pkl, read_file, write_pkl
 
