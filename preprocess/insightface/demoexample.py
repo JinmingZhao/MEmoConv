@@ -21,3 +21,7 @@ aa_sim = model.compute_sim(feats[0], feats[1])
 a1b_sim = model.compute_sim(feats[0], feats[2])
 a2b_sim = model.compute_sim(feats[1], feats[2])
 print(f'aasim {aa_sim}, a1b_sim {a1b_sim}, a2b_sim {a2b_sim}') 
+
+'''
+另外经过挑一些脸进行测试人脸识别模型对于相似的脸相似度还是很高的，基本能到80%以上
+'''
