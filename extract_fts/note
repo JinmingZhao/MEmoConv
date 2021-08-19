@@ -1,0 +1,13 @@
+Text Modality:
+    Bert-Base -- Going
+    RoBerta-Base
+    Glove
+
+Speech Modality:
+    ComparE
+    wav2vec2.0 -- Going
+    IS10
+
+Visual Modality:
+    Denseface -- Going
+    68 facial landmarks, 17 facial action units, head pose, head orientation, and eye gaze.
