@@ -468,7 +468,14 @@ def get_no_asd_faces(spk2timestamps, spk2uttIds, speaker_asd_faces, face_emb_fil
                             # print(faces_within_one_utt)
                             # print(sim_scores)
                             # print('spk {} frame {}-{} low sim within one-utterance asd faces {}'.format(current_spk, frame_id, temp_face_id, avg_sim_score))
-                            select_face_idx = [0,1].pop(temp_face_id)                        
+                            select_face_idx = [0,1]
+                            if temp_face_id >= len(select_face_idx):
+                                # 随机设置一个
+                                select_face_idx = 0
+                                count_case24 += 1
+                            else:
+                                select_face_idx.remove(temp_face_id)
+                                select_face_idx = select_face_idx[0]           
                         count_case21 += 1
                     else:
                         # print('Warning the utterance have more than 2 spks detected by ASD and use case22,23,24')
@@ -594,7 +601,7 @@ if __name__ == '__main__':
                 write_pkl(dialogspeaker_asd_faces_filepath, dialogspeaker_asd_faces)
 
     if True:
-        for movie_name in movies_names[11:]:
+        for movie_name in movies_names[32:]:
             print(f'Current movie {movie_name}')
             meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
             talkout_dialog_dir = '/data9/memoconv/memoconv_convs_talknetoutput/{}'.format(movie_name)
