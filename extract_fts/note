@@ -11,3 +11,38 @@ Speech Modality:
 Visual Modality:
     Denseface -- Going
     68 facial landmarks, 17 facial action units, head pose, head orientation, and eye gaze.
+
+/data9/memoconv/modality_fts/{text, speech, visual}
+
+
+DialogRNN 数据格式要求:
+/data1/Muse_hjw/gated/DialogueGCN/tmp/IEMOCAP_features_v_frame_wth_frm_len.pkl
+videoIDs, videoSpeakers, videoLabels, videoText, videoAudio, videoVisual, videoSentence, trainVid, testVid, vid2framelen = 
+data = pkl.load(open('IEMOCAP_features_v_frame_wth_frm_len.pkl', 'rb'))
+videoIDs
+    video_names = data[0].keys()
+    video_uttIds = data[0]['Ses05F_impro08']
+videoSpeakers
+    video_names = data[1].keys()
+    video_spks = data[1]['Ses05F_impro08']  # 序列跟 video_uttIds 一一对应
+videoLabels
+    video_names = data[2].keys()
+    video_labels = data[2]['Ses05F_impro08'] # 序列跟 video_uttIds 一一对应
+videoText
+    video_names = data[3].keys()
+    video_labels = data[3]['Ses05F_impro08']  # 每句话对应100维的向量
+videoAudio
+    video_names = data[4].keys()
+    video_labels = data[4]['Ses05F_impro08']  # 每句话对应1582维的IS10特征
+videoVisual
+    video_names = data[5].keys()
+    video_labels = data[5]['Ses05F_impro08']  # 每句话对应时间序列的特征 (50,342)
+videoSentence
+    video_names = data[6].keys()
+    video_labels = data[6]['Ses05F_impro08']  #每句话的文本内容 跟 video_uttIds 一一对应
+trainVid
+    video_names = data[7] # 序列存储属于训练集合的 videoIDs
+testVid
+    video_names = data[8] # 序列存储属于测试集合的 videoIDs
+vid2framelen
+    video_names = data[9] # 序列存储属于训练集合的 videoIDs
