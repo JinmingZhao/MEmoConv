@@ -1,18 +1,27 @@
+/data9/memoconv/modality_fts/{text, speech, visual}
+
 Text Modality:
-    Bert-Base -- Going
+    Bert-Base -- Done
     RoBerta-Base
     Glove
 
 Speech Modality:
-    ComparE
-    wav2vec2.0 -- Going
+    ComparE --Done
+    wav2vec2.0 -- Done
     IS10
 
 Visual Modality:
-    Denseface -- Going
-    68 facial landmarks, 17 facial action units, head pose, head orientation, and eye gaze.
+    Denseface -- Done
+    68 facial landmarks, 17 facial action units, head pose, head orientation, and eye gaze.  --OpenFace
+    AffectNet -- Going -- affectnet-env
 
-/data9/memoconv/modality_fts/{text, speech, visual}
+## extracting affectnet features
+export PYTHONPATH=/data9/memoconv/tools/AffectNet
+采用的是mobilenet的模型，整体效果60%.
+CUDA_VISIBLE_DEVICES=6 python inference.py
+
+看了fendou_1 和 fendou_3 两个例子, DenseNet 一般不太明显的都会识别为Neutral. 
+而 AffectNet 会倾向于识别为 Sad Afraid 等情感, 对于细微的表情很敏感。
 
 
 DialogRNN 数据格式要求:

@@ -71,6 +71,7 @@ class DensefaceExtractor():
 
 
 
+
 def compute_corpus_mean_std4denseface():
     # 整个数据集一半的图片计算的 mean 89.936089, std 45.954746
     all_pics = glob.glob('/data9/memoconv/memoconv_convs_talknetoutput/*/*/final_processed_spk2asd_faces/*.jpg')
@@ -135,14 +136,12 @@ def get_uttId2features(extractor, meta_filepath, movie_visual_dir):
 
 if __name__ == '__main__':
     # export PYTHONPATH=/data9/MEmoConv
-    # CUDA_VISIBLE_DEVICES=6 python extract_speech_ft.py  
+    # CUDA_VISIBLE_DEVICES=6 python extract_visual_ft.py  
     feat_type = 'denseface'
     all_output_ft_filepath = '/data9/memoconv/modality_fts/visual/all_visual_ft_{}.pkl'.format(feat_type)
     all_text_info_filepath = '/data9/memoconv/modality_fts/visual/all_visual_path_info.pkl'
     movies_names = read_file('../preprocess/movie_list.txt')
     movies_names = [movie_name.strip() for movie_name in movies_names]
-    movie2uttID2ft = collections.OrderedDict()
-    movie2uttID2visualpath = collections.OrderedDict()
 
     if False:
         mean, std = compute_corpus_mean_std4denseface()
@@ -155,19 +154,27 @@ if __name__ == '__main__':
     else:
         print(f'Error feat type {feat_type}')
 
+    movie2uttID2ft = collections.OrderedDict()
+    movie2uttID2visualpath = collections.OrderedDict()
     # # extract all faces, only in the utterance
-    for movie_name in movies_names[20:40]:
+    for movie_name in movies_names:
         print(f'Current movie {movie_name}')
         output_ft_filepath = '/data9/memoconv/modality_fts/visual/movies/{}_visual_ft_{}.pkl'.format(movie_name, feat_type)
         text_info_filepath = '/data9/memoconv/modality_fts/visual/movies/{}_visualpath_info.pkl'.format(movie_name)
         movie_visual_dir = '/data9/memoconv/memoconv_convs_talknetoutput/{}'.format(movie_name)
         meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
-        uttId2facepaths, uttId2fts = get_uttId2features(extractor, meta_filepath, movie_visual_dir)
-        write_pkl(output_ft_filepath, uttId2fts)
-        if not os.path.exists(text_info_filepath):
-            write_pkl(text_info_filepath, uttId2facepaths)
+        if os.path.exists(output_ft_filepath):
+            print('\t Exist features of this movie')
+            uttId2fts = read_pkl(output_ft_filepath)
+            uttId2facepaths = read_pkl(text_info_filepath)
+            assert len(uttId2fts) == len(uttId2facepaths)
+        else:
+            uttId2facepaths, uttId2fts = get_uttId2features(extractor, meta_filepath, movie_visual_dir)
+            write_pkl(output_ft_filepath, uttId2fts)
+            if not os.path.exists(text_info_filepath):
+                write_pkl(text_info_filepath, uttId2facepaths)
         movie2uttID2ft.update(uttId2fts)
         movie2uttID2visualpath.update(uttId2facepaths)
-    # write_pkl(all_output_ft_filepath, movie2uttID2ft)
-    # if not os.path.exists(all_text_info_filepath):
-    #     write_pkl(all_text_info_filepath, movie2uttID2visualpath)
+    write_pkl(all_output_ft_filepath, movie2uttID2ft)
+    if not os.path.exists(all_text_info_filepath):
+        write_pkl(all_text_info_filepath, movie2uttID2visualpath)
