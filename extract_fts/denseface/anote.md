@@ -2,6 +2,8 @@
 重写tensorflow版本的denseface，并在FER+上进行训练
 FER+ 数据地址：
 /data3/zjm/dataset/ferplus/npy_data  是处理好的灰度图输入 train/val/test 以及 对应的target.
+train: 28452 张图片
+
 fer_idx_to_class = ['neu', 'hap', 'sur', 'sad', 'ang', 'dis', 'fea', 'con']
 densenet100_adam0.001_0.0 epoch-43
 [Val] result WA: 0.8285 UAR 0.6795 F1 0.6969

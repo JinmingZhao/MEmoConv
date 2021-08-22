@@ -1,0 +1,16 @@
+val:
+{'Neutral': 500, 'Anger': 500, 'Happiness': 500, 'Fear': 500, 'Disgust': 500, 'Surprise': 500, 'Sadness': 500, 'Contempt': 499}
+train:
+{'Happiness': 134415, 'Neutral': 74874, 'Surprise': 14090, 'Sadness': 25459, 'Anger': 24882, 'Disgust': 3803, 'Fear': 6378, 'Contempt': 3750}
+Fer数据集的数据28K图片，类别也是8类 ['neu', 'hap', 'sur', 'sad', 'ang', 'dis', 'fea', 'con']
+10倍的数据希望能表现的更好。
+
+方案1: 将affectnet的数据都转成 fer 的数据格式
+/data3/zjm/dataset/ferplus/npy_data 是处理好的灰度图输入 train/val 以及 对应的target.
+
+
+方案2: 采用affectnet的数据格式，官方的release的模型和方法 --Adopt This --Pending
+使用440,000的图片
+https://github.com/behzadhsni/BReG-NeXt
+https://arxiv.org/pdf/2004.08495.pdf
+采用的是 64*64*3 数据输入
