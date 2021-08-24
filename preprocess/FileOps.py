@@ -60,8 +60,8 @@ def read_xls(filepath, sheetname, skip_rows=0):
     :return: list types of all instances
     '''
     workbook = openpyxl.load_workbook(filepath)
-    sheetnames = workbook.sheetnames
-    print('sheetnames {}'.format(sheetnames))
+    # sheetnames = workbook.sheetnames
+    # print('sheetnames {}'.format(sheetnames))
     booksheet = workbook[sheetname]
     rows = booksheet.rows
     all_rows = [r for r in rows]

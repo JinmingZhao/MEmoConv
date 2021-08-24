@@ -105,7 +105,7 @@ def analyse_dialog_emotions(anno_instances):
             if emos_str is None:
                 print('\t \t Error emo anno is Empty in {}'.format(dialog_id))
                 exit(0)
-            emos = emos_str.split(',')
+            emos = emos_str.replace(' ', '').split(',')
             emos = correct_emos(emos)
             dialogs2emos[dialog_id] = [emos]
             total_emo_anno += len(emos)
@@ -116,7 +116,7 @@ def analyse_dialog_emotions(anno_instances):
                 emos = pre_emos
             else:
                 # 随时更新 pre_emos
-                emos = emos_str.split(',')
+                emos = emos_str.replace(' ', '').split(',')
                 emos = correct_emos(emos)
                 pre_emos = emos
             dialogs2emos[dialog_id] += [emos]
@@ -217,9 +217,14 @@ def write_xls_oneline(filepath, instance):
     '''
     movie_name = instance[0]
     workbook = openpyxl.load_workbook(filepath)
-    booksheet = workbook['statistic']
+    booksheet = workbook['sheet1']
     rows = booksheet.rows
     rows = [r for r in rows]
+    if len(rows) == 0:
+        head = ['movieName', 'num_dialog', 'num_turns', 'num_utts', 'numturn_per_dialog', 'numutt_per_turn', 'not_sure_count', 'fleiss_kappa', 
+                'total3_consist', 'total3_consist_rate', 'main3_consist', 'main3_consist_rate', 'part3_consist', 'part3_consist_rate', 
+                'total2_consist', 'total2_consist_rate', 'main2_consist', 'main2_consist_rate', 'part2_consist', 'part2_consist_rate']
+        booksheet.append(head)
     update_flag = False
     for i in range(len(rows)):
         if movie_name == rows[i][0].value:
@@ -228,8 +233,6 @@ def write_xls_oneline(filepath, instance):
             # start from 1
             update_row_idx = i+1
             booksheet.delete_rows(idx=update_row_idx, amount=1)
-    # head = ['movieName', 'num_dialog', 'num_turns', 'num_utts', 'numutt_per_turn', 'fleiss_kappa', 'numturn_per_dialog', 'total3_consist', 'total3_consist_rate', 'main3_consist', 'main3_consist_rate', 'part3_consist', 'part3_consist_rate', 'total2_consist', 'total2_consist_rate', 'main2_consist', 'main2_consist_rate', 'part2_consist', 'part2_consist_rate']
-    # booksheet.append(head)
     if update_flag is False:
         booksheet.append(instance)
         print('add the movie {}'.format(movie_name))
@@ -719,6 +722,31 @@ def get_spk_anno_format(output_filepath, anno3_instances, movie_name):
         ws.append(each)
     wb.save(output_filepath)
 
+def collections_notsure_dialogs(meta_fileapth):
+    # head = ['UtteranceId', 'StartTime', 'EndTime', 'Text', 'Speaker', 'EmoAnnotator1', 'EmoAnnotator2', 'EmoAnnotator3',
+    #  'final_mul_emo', 'final_main_emo']
+    # 可以平滑的不处理，前面或者后面的句子属于相同的说话人，中间出现不确定的。
+    rows = read_xls(meta_fileapth, sheetname='sheet1', skip_rows=1)
+    rows = [r for r in rows]
+    notsure_instances = []
+    smooth_count = 0
+    for i in range(len(rows)):
+        spk, final_emo = rows[i][4].value, rows[i][9].value
+        if final_emo == 'NotSure' or final_emo == 'Other':
+            pre_index, after_index = i - 1, i+1
+            if pre_index >= 0:
+                pre_spk, pre_final_emo = rows[i-1][4].value, rows[i-1][9].value
+                if pre_spk == spk and pre_final_emo not in ['Other', 'NotSure']:
+                    final_emo = pre_final_emo
+            elif after_index < len(rows):
+                after_spk, after_final_emo = rows[i-1][4].value, rows[i-1][9].value
+                if after_spk == spk and after_final_emo not in ['Other', 'NotSure']:
+                    final_emo = after_final_emo
+            if final_emo == 'NotSure' or final_emo == 'Other':
+                notsure_instances.append([s.value for s in rows[i][:10]])
+            else:
+                smooth_count += 1
+    return notsure_instances, smooth_count
 
 if __name__ == '__main__':
     if True:
@@ -729,7 +757,7 @@ if __name__ == '__main__':
     movies_names = [movie_name.strip() for movie_name in movies_names]
 
     if True:
-        for movie_name in movies_names[50:52]:
+        for movie_name in movies_names:
             anno1_path = '/Users/jinming/Desktop/works/memoconv_labels/{}_anno1_done.xlsx'.format(movie_name)
             if not os.path.exists(anno1_path):
                 continue
@@ -792,7 +820,7 @@ if __name__ == '__main__':
                 feedback_dialogs2emos = get_feedback_ground_emos(anno1_dialogs2emos, anno2_dialogs2emos, anno3_dialogs2emos, anno1_feedback_dialogs, anno2_feedback_dialogs, anno3_feedback_dialogs)
                 fleiss_kappa, not_sure_count = get_final_decision(meta_fileapth, strategy_name='allin_pool', feedback_dialogs2emos=feedback_dialogs2emos, quality_scores=movie2quality[movie_name])
 
-            if False:
+            if True:
                 # step7: get the statistic of the movie 
                 instance = get_movie_statistic(movie_name, anno3_num_dialogs, anno3_num_turns, anno3_num_utts, 
                                             p3_num_total_same, p3_num_main_same, p3_num_part_same,
@@ -806,7 +834,21 @@ if __name__ == '__main__':
         low_sim_simple_personindex_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic_PIndex_simple.xlsx'
         collections_low_sim_personIndex_dialogs(movies_names, movie2annotators, low_sim_filepath, low_sim_simple_filepath, low_sim_simple_personindex_filepath)
 
-    if True:
+    if False:
+        # collect NotSure Utterances
+        notsure_dialog_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/notsure_statistic.xlsx'
+        all_instances = []
+        all_smooth_count = 0
+        all_instances.append(['UtteranceId', 'StartTime', 'EndTime', 'Text', 'Speaker', 'EmoAnnotator1', 'EmoAnnotator2', 'EmoAnnotator3', 'final_mul_emo', 'final_main_emo'])
+        for movie_name in movies_names:
+            meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels/meta_{}.xlsx'.format(movie_name)
+            notsure_instances, smooth_count = collections_notsure_dialogs(meta_fileapth)
+            all_instances.extend(notsure_instances)
+            all_smooth_count += smooth_count
+        print('all instances {} and all_smooth_count {}'.format(len(all_instances), all_smooth_count))
+        write_xls(notsure_dialog_filepath, 'sheet1', all_instances)
+
+    if False:
         # 将 final-labels meta-excel 文件转化为 csv 文件进行保存, 在服务端读取会报错
         for movie_name in movies_names:
             meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels/meta_{}.xlsx'.format(movie_name)

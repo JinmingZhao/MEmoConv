@@ -101,9 +101,13 @@ def compute_spk_age_gender(movies_names, dialog_spk_info_filepath):
     print(f'Age distribution {age2count}')
 
 def compute_emotion_distribution(movies_names):
+    '''
+    turn 间的情感变化 inter-shift, inter-inertia 和 turn 内的情感变化 intra-shift, intra-inertia
+    '''
     multi_emos2count = {}
     final_emo2count = {}
     emotion_shift, emotion_inertia = [], []
+    intra_emotion_inertia, intra_emotion_shift = [], []
     for movie_name in movies_names:
         print('Current movie {}'.format(movie_name))
         meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels/meta_{}.xlsx'.format(movie_name)
@@ -127,7 +131,7 @@ def compute_emotion_distribution(movies_names):
                 final_emo2count[final_emo] += 1
             # 统计对话 Turn 之间情感变化
             dialog_id = '_'.join(UtteranceId.split('_')[:2])
-            spk = instance[4]
+            spk = instance[4].value
             if dialog2emos.get(dialog_id) is None:
                 dialog2emos[dialog_id] = [final_emo]
             else:    
@@ -140,20 +144,48 @@ def compute_emotion_distribution(movies_names):
         for dialog_id in dialog2emos.keys():
             dialog_emos = dialog2emos[dialog_id]
             dialog_spks = dialog2spks[dialog_id]
+            assert len(dialog_emos) == len(dialog_spks)
             pre_spk = dialog_spks[0]
             pre_emo = dialog_emos[0]
             # print(f'\t dialog id {dialog_id}')
             for spk, emo in zip(dialog_spks[1:], dialog_emos[1:]):
-                if spk == pre_spk:
-                    continue
-                else:
+                if spk != pre_spk:
+                    # spk 不同表示turn发生改变
                     if emo == pre_emo:
                         emotion_inertia.append(pre_emo+'_'+emo)
                     else:
                         emotion_shift.append(pre_emo+'_'+emo)
                         # print(f'emotion_shift {pre_emo} -> {emo}')
                     pre_spk = spk
-                    pre_emo = emo
+                    pre_emo = emo     
+        # 统计情感turn内的情感变化组合
+        for dialog_id in dialog2emos.keys():
+            dialog_emos = dialog2emos[dialog_id]
+            dialog_spks = dialog2spks[dialog_id]
+            pre_spk = dialog_spks[0]
+            turn_emos = [dialog_emos[0]]
+            # print(f'\t dialog id {dialog_id}')
+            # print(dialog_spks)
+            for spk, emo in zip(dialog_spks[1:], dialog_emos[1:]):
+                if spk == pre_spk:
+                    turn_emos.append(emo)
+                else:
+                    # analyse 
+                    if len(turn_emos) > 1:
+                        # print('turn emos {}'.format(turn_emos))
+                        pre_emo = turn_emos[0]
+                        for emo in turn_emos[1:]:
+                            if emo == pre_emo:
+                                intra_emotion_inertia.append(pre_emo+'_'+emo)
+                                # print(f'intra emotion_inertia {pre_emo} -> {emo}')
+                            else:
+                                intra_emotion_shift.append(pre_emo+'_'+emo)
+                                # print(f'intra emotion_shift {pre_emo} -> {emo}')
+                                pre_emo = emo
+                    # new turn
+                    turn_emos = []
+                    turn_emos.append(emo)
+                    pre_spk = spk
     multi_emo_rate = sum(multi_emos2count.values()) / sum(final_emo2count.values())
     print(f'multi-emo distribution {multi_emos2count}')
     print(f'multi-emo rate {multi_emo_rate}')
@@ -162,9 +194,19 @@ def compute_emotion_distribution(movies_names):
     emotion_inertia_count = len(emotion_inertia)
     print(f'emotion shift {emotion_shift_count}')  
     print(f'emotion inertia {emotion_inertia_count}')
-    emo_shift2count = Counter(emotion_inertia)
+    emo_shift2count = Counter(emotion_shift)
     print(f'emotion shift distribution {emo_shift2count}')
-
+    emo_inertia2count = Counter(emotion_inertia)
+    print(f'emotion inertia distribution {emo_inertia2count}')
+    # intra-turn emotion shift and inertia
+    intra_emotion_shift_count = len(intra_emotion_shift)
+    intra_emotion_inertia_count = len(intra_emotion_inertia)
+    print(f'intra emotion shift {intra_emotion_shift_count}')  
+    print(f'intra emotion inertia {intra_emotion_inertia_count}')
+    intra_emo_shift2count = Counter(intra_emotion_shift)
+    print(f'intra  emotion shift distribution {intra_emo_shift2count}')
+    intra_emo_inertia2count = Counter(intra_emotion_inertia)
+    print(f'intra  emotion inertia distribution {intra_emo_inertia2count}')
 
 def write_meta_json_info():
     '''
@@ -207,7 +249,7 @@ if __name__ == '__main__':
         dialog_spk_info_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/dialogSpkAnnoUpdate.xlsx'
         compute_spk_age_gender(movies_names, dialog_spk_info_filepath)
 
-    if False:
+    if True:
         compute_emotion_distribution(movies_names)
     
     
