@@ -239,7 +239,7 @@ if __name__ == '__main__':
     movies_names = read_file('movie_list.txt')
     movies_names = [movie_name.strip() for movie_name in movies_names]
 
-    if False:
+    if True:
         compute_global_fleiss_kappa(movies_names)
     
     if False:

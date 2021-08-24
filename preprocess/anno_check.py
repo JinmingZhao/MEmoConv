@@ -321,8 +321,9 @@ def decision_allin_pool(anno1_emos, anno2_emos, anno3_emos):
                 if first_emo2count[emo] > 1:
                     main_emo = emo
             if main_emo is None:
-                main_emo = 'NotSure'
-                print('Warning please check one, two or more emotion 3times but no main emo')
+                # 取多情感的第一个作为主情感
+                main_emo = mul_emos[0]
+                # print('Warning please check one, two or more emotion 3times but no main emo')
                 # print(first_emo2count, count2emos)
             # print(f'{count3_emos} appear 3 times')
         else:
@@ -340,8 +341,8 @@ def decision_allin_pool(anno1_emos, anno2_emos, anno3_emos):
                     if first_emo2count[emo] > 1:
                         main_emo = emo
                 if main_emo is None:
-                    main_emo = 'NotSure'
-                    print('Warning please check one,  two or more emotion 2 times but no main emo')
+                    main_emo = mul_emos[0]
+                    # print('Warning please check one,  two or more emotion 2 times but no main emo')
                     # print(first_emo2count, count2emos)
                 # print(f'{count2_emos} appear 2 times')
     return mul_emos, main_emo
@@ -729,6 +730,7 @@ def collections_notsure_dialogs(meta_fileapth):
     rows = read_xls(meta_fileapth, sheetname='sheet1', skip_rows=1)
     rows = [r for r in rows]
     notsure_instances = []
+    smoothed_instances = []
     smooth_count = 0
     for i in range(len(rows)):
         spk, final_emo = rows[i][4].value, rows[i][9].value
@@ -738,15 +740,17 @@ def collections_notsure_dialogs(meta_fileapth):
                 pre_spk, pre_final_emo = rows[i-1][4].value, rows[i-1][9].value
                 if pre_spk == spk and pre_final_emo not in ['Other', 'NotSure']:
                     final_emo = pre_final_emo
+                    smoothed_instances.append([s.value for s in rows[i][:10]])
             elif after_index < len(rows):
-                after_spk, after_final_emo = rows[i-1][4].value, rows[i-1][9].value
+                after_spk, after_final_emo = rows[i+1][4].value, rows[i+1][9].value
                 if after_spk == spk and after_final_emo not in ['Other', 'NotSure']:
                     final_emo = after_final_emo
+                    smoothed_instances.append([s.value for s in rows[i][:10]])
             if final_emo == 'NotSure' or final_emo == 'Other':
                 notsure_instances.append([s.value for s in rows[i][:10]])
             else:
                 smooth_count += 1
-    return notsure_instances, smooth_count
+    return notsure_instances, smoothed_instances, smooth_count
 
 if __name__ == '__main__':
     if True:
@@ -756,7 +760,7 @@ if __name__ == '__main__':
     movies_names = read_file('movie_list.txt')
     movies_names = [movie_name.strip() for movie_name in movies_names]
 
-    if True:
+    if False:
         for movie_name in movies_names:
             anno1_path = '/Users/jinming/Desktop/works/memoconv_labels/{}_anno1_done.xlsx'.format(movie_name)
             if not os.path.exists(anno1_path):
@@ -828,27 +832,7 @@ if __name__ == '__main__':
                                             fleiss_kappa, not_sure_count)
                 write_xls_oneline(result_filepath, instance)
 
-    if False:
-        low_sim_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic.xlsx'
-        low_sim_simple_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic_simple.xlsx'
-        low_sim_simple_personindex_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic_PIndex_simple.xlsx'
-        collections_low_sim_personIndex_dialogs(movies_names, movie2annotators, low_sim_filepath, low_sim_simple_filepath, low_sim_simple_personindex_filepath)
-
-    if False:
-        # collect NotSure Utterances
-        notsure_dialog_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/notsure_statistic.xlsx'
-        all_instances = []
-        all_smooth_count = 0
-        all_instances.append(['UtteranceId', 'StartTime', 'EndTime', 'Text', 'Speaker', 'EmoAnnotator1', 'EmoAnnotator2', 'EmoAnnotator3', 'final_mul_emo', 'final_main_emo'])
-        for movie_name in movies_names:
-            meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels/meta_{}.xlsx'.format(movie_name)
-            notsure_instances, smooth_count = collections_notsure_dialogs(meta_fileapth)
-            all_instances.extend(notsure_instances)
-            all_smooth_count += smooth_count
-        print('all instances {} and all_smooth_count {}'.format(len(all_instances), all_smooth_count))
-        write_xls(notsure_dialog_filepath, 'sheet1', all_instances)
-
-    if False:
+    if True:
         # 将 final-labels meta-excel 文件转化为 csv 文件进行保存, 在服务端读取会报错
         for movie_name in movies_names:
             meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels/meta_{}.xlsx'.format(movie_name)
@@ -869,3 +853,27 @@ if __name__ == '__main__':
             anno3_path = '/Users/jinming/Desktop/works/memoconv_labels/{}_anno3_done.xlsx'.format(movie_name)
             anno3_instances = read_xls(anno3_path, sheetname='工作表1', skip_rows=1)
             get_spk_anno_format(spk_format_filepath, anno3_instances, movie_name)
+    
+    if False:
+        # check
+        low_sim_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic.xlsx'
+        low_sim_simple_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic_simple.xlsx'
+        low_sim_simple_personindex_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/low_sim_statistic_PIndex_simple.xlsx'
+        collections_low_sim_personIndex_dialogs(movies_names, movie2annotators, low_sim_filepath, low_sim_simple_filepath, low_sim_simple_personindex_filepath)
+
+    if False:
+        # check collect NotSure Utterances
+        notsure_dialog_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/notsure_statistic.xlsx'
+        all_instances = []
+        all_smooth_count = 0
+        all_smoothed_instances = []
+        all_instances.append(['UtteranceId', 'StartTime', 'EndTime', 'Text', 'Speaker', 'EmoAnnotator1', 'EmoAnnotator2', 'EmoAnnotator3', 'final_mul_emo', 'final_main_emo'])
+        for movie_name in movies_names:
+            meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels/meta_{}.xlsx'.format(movie_name)
+            notsure_instances, smoothed_instances, smooth_count = collections_notsure_dialogs(meta_fileapth)
+            all_instances.extend(notsure_instances)
+            all_smoothed_instances.extend(smoothed_instances)
+            all_smooth_count += smooth_count
+        print('all instances {} and all_smooth_count {}'.format(len(all_instances), all_smooth_count))
+        all_instances.extend(all_smoothed_instances)
+        write_xls(notsure_dialog_filepath, 'sheet1', all_instances)
