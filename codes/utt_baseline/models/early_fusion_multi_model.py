@@ -31,7 +31,7 @@ class EarlyFusionMultiModel(nn.Module):
 
         # text model
         if 'L' in self.modality:
-            self.netL = TextCNN(opt.l_input_size, opt.l_hidden_size, pool_len=opt.max_text_tokens)
+            self.netL = TextCNN(opt.l_input_size, opt.l_hidden_size)
             fusion_size += opt.l_hidden_size
 
         # visual model
@@ -41,7 +41,7 @@ class EarlyFusionMultiModel(nn.Module):
             fusion_size += opt.v3d_hidden_size
 
         elif 'V' in self.modality:
-            self.netV = LSTMEncoder(opt.v_input_size, opt.v_hidden_size, opt.v_embd_method, opool_len=pt.max_visual_tokens)
+            self.netV = LSTMEncoder(opt.v_input_size, opt.v_hidden_size, opt.v_embd_method, pool_len=opt.max_visual_tokens)
             fusion_size += opt.v_hidden_size
         
         self.netC = FcClassifier(fusion_size, fusion_layers, opt.output_dim, dropout=opt.dropout_rate, use_bn=opt.bn)
