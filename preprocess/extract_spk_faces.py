@@ -544,7 +544,7 @@ if __name__ == '__main__':
 
     if False:
         # extract all faces, only in the utterance
-        for movie_name in movies_names[1:]:
+        for movie_name in movies_names:
             print(f'Current movie {movie_name}')
             meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
             talkout_dialog_dir = '/data9/memoconv/memoconv_convs_talknetoutput/{}'.format(movie_name)

@@ -54,7 +54,7 @@ def check_dialog(anno_instances):
     dialogid2num_turns = collections.OrderedDict()
     for dialog_id in dialogs2spks.keys():
         spks = dialogs2spks[dialog_id]
-        num_turns = 0
+        num_turns = 1
         cur_spk = 'A'
         for i in range(len(spks)):
             if spks[i] != cur_spk:
@@ -62,6 +62,7 @@ def check_dialog(anno_instances):
                 cur_spk = spks[i]
         dialogid2num_turns[dialog_id] = num_turns
         total_num_turns += num_turns
+        print('dialog id {} turns {}'.format(dialog_id, num_turns))
     # print('\t total turns nums {}'.format(num_turns))
     return num_dialogs, total_num_turns, num_utts, dialogid2num_turns, dialogs
 
@@ -760,7 +761,7 @@ if __name__ == '__main__':
     movies_names = read_file('movie_list.txt')
     movies_names = [movie_name.strip() for movie_name in movies_names]
 
-    if False:
+    if True:
         for movie_name in movies_names:
             anno1_path = '/Users/jinming/Desktop/works/memoconv_labels/{}_anno1_done.xlsx'.format(movie_name)
             if not os.path.exists(anno1_path):
@@ -832,7 +833,7 @@ if __name__ == '__main__':
                                             fleiss_kappa, not_sure_count)
                 write_xls_oneline(result_filepath, instance)
 
-    if True:
+    if False:
         # 将 final-labels meta-excel 文件转化为 csv 文件进行保存, 在服务端读取会报错
         for movie_name in movies_names:
             meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels/meta_{}.xlsx'.format(movie_name)
