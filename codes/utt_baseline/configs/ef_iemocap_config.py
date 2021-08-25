@@ -8,7 +8,7 @@ target_dir = '/data7/emobert/exp/evaluation/{}/target'.format(dataset_name)
 model_cfg = {
     # basic info
     'model_name': 'early_fusion_multi',
-    'dataset_mode': 'iemocap_original', # use the original denseface features
+    'dataset_mode': 'meld', # use the original denseface features
     'pretained_ft_type': 'denseface_seetaface_iemocap_mean_std_torch',
     # global training info
     'dropout_rate': 0.5,
@@ -49,7 +49,7 @@ model_cfg = {
     'a_embd_method':'maxpool', # use last mean att max
     'a_hidden_size':128,
     # text encoder info -- textcnn, bert_base=768, bert_large=1024
-    'max_lexical_tokens': 22,
+    'max_text_tokens': 22,
     'l_ft_name': 'bert',
     'l_input_size': 768,
     'l_hidden_size': 128,

@@ -112,7 +112,7 @@ def get_uttId2features(extractor, meta_filepath, movie_audio_dir):
         audio_filepath = os.path.join(movie_audio_dir, dialog_id, 'pyaudios', new_uttId + '.wav')
         assert os.path.exists(audio_filepath) == True
         ft = extractor(audio_filepath)
-        uttId2ft[new_uttId] = ft
+        uttId2ft[new_uttId] = ft # (bs, len, dim)
         uttId2speechpath[new_uttId] = audio_filepath
     return uttId2speechpath, uttId2ft
 

@@ -26,12 +26,12 @@ class EarlyFusionMultiModel(nn.Module):
         
         # acoustic model
         if 'A' in self.modality:
-            self.netV = LSTMEncoder(opt.a_input_size, opt.a_hidden_size, opt.a_embd_method)
+            self.netA = LSTMEncoder(opt.a_input_size, opt.a_hidden_size, opt.a_embd_method, pool_len=opt.max_acoustic_tokens)
             fusion_size += opt.a_hidden_size
 
-        # lexical model
+        # text model
         if 'L' in self.modality:
-            self.netL = TextCNN(opt.l_input_size, opt.l_hidden_size)
+            self.netL = TextCNN(opt.l_input_size, opt.l_hidden_size, pool_len=opt.max_text_tokens)
             fusion_size += opt.l_hidden_size
 
         # visual model
@@ -39,8 +39,9 @@ class EarlyFusionMultiModel(nn.Module):
             self.front3d = ResNet3D()
             self.netV = LSTMEncoder(opt.v3d_input_size, opt.v3d_hidden_size, opt.v3d_embd_method)
             fusion_size += opt.v3d_hidden_size
+
         elif 'V' in self.modality:
-            self.netV = LSTMEncoder(opt.v_input_size, opt.v_hidden_size, opt.v_embd_method)
+            self.netV = LSTMEncoder(opt.v_input_size, opt.v_hidden_size, opt.v_embd_method, opool_len=pt.max_visual_tokens)
             fusion_size += opt.v_hidden_size
         
         self.netC = FcClassifier(fusion_size, fusion_layers, opt.output_dim, dropout=opt.dropout_rate, use_bn=opt.bn)
@@ -58,14 +59,16 @@ class EarlyFusionMultiModel(nn.Module):
         """
         if "A" in self.modality:
             self.acoustic = batch['acoustic'].float().to(self.device)
+
         if "L" in self.modality:
-            self.lexical = batch['lexical'].float().to(self.device)
+            self.text = batch['text'].float().to(self.device)
 
         if "V3d" in self.modality:
             # default (batchsize, timesteps=50, img-size, img-size)
             # to (batchsize, timesteps=50, Channel=1, img-size, img-size)
             viusal_input = torch.unsqueeze(batch['visual3d'], 2)
             self.visual = viusal_input.float().to(self.device)
+
         elif "V" in self.modality:
             self.visual = batch['visual'].float().to(self.device)
 
@@ -79,7 +82,7 @@ class EarlyFusionMultiModel(nn.Module):
             final_embd.append(self.feat_A)
             
         if 'L' in self.modality:
-            self.feat_L = self.netL(self.lexical)
+            self.feat_L = self.netL(self.text)
             final_embd.append(self.feat_L)
         
         if 'V3d' in self.modality:

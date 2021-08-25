@@ -8,12 +8,13 @@ def get_logger(path, suffix):
     logger.setLevel(level = logging.INFO)
     handler = logging.FileHandler(os.path.join(path, f"{suffix}_{cur_time}.log"))
     handler.setLevel(logging.INFO)
-    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    # handler.setFormatter(formatter)
 
-    # console = logging.StreamHandler()
-    # console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
 
     logger.addHandler(handler)
-    # logger.addHandler(console)
+    logger.addHandler(console)
     return logger
