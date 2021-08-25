@@ -2,7 +2,7 @@
 # bash run.sh V 0 1
 export PYTHONPATH=/data7/MEmoConv
 set -e
-modality=$1
+modality=$1 # 
 gpu=$2
 run_ind=$3
 for run_idx in $run_ind;

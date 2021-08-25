@@ -22,36 +22,3 @@ CUDA_VISIBLE_DEVICES=6 python inference.py
 
 看了fendou_1 和 fendou_3 两个例子, DenseNet 一般不太明显的都会识别为Neutral. 
 而 AffectNet 会倾向于识别为 Sad Afraid 等情感, 对于细微的表情很敏感。
-
-
-DialogRNN 数据格式要求:
-/data1/Muse_hjw/gated/DialogueGCN/tmp/IEMOCAP_features_v_frame_wth_frm_len.pkl
-videoIDs, videoSpeakers, videoLabels, videoText, videoAudio, videoVisual, videoSentence, trainVid, testVid, vid2framelen = 
-data = pkl.load(open('IEMOCAP_features_v_frame_wth_frm_len.pkl', 'rb'))
-videoIDs
-    video_names = data[0].keys()
-    video_uttIds = data[0]['Ses05F_impro08']
-videoSpeakers
-    video_names = data[1].keys()
-    video_spks = data[1]['Ses05F_impro08']  # 序列跟 video_uttIds 一一对应
-videoLabels
-    video_names = data[2].keys()
-    video_labels = data[2]['Ses05F_impro08'] # 序列跟 video_uttIds 一一对应
-videoText
-    video_names = data[3].keys()
-    video_labels = data[3]['Ses05F_impro08']  # 每句话对应100维的向量
-videoAudio
-    video_names = data[4].keys()
-    video_labels = data[4]['Ses05F_impro08']  # 每句话对应1582维的IS10特征
-videoVisual
-    video_names = data[5].keys()
-    video_labels = data[5]['Ses05F_impro08']  # 每句话对应时间序列的特征 (50,342)
-videoSentence
-    video_names = data[6].keys()
-    video_labels = data[6]['Ses05F_impro08']  #每句话的文本内容 跟 video_uttIds 一一对应
-trainVid
-    video_names = data[7] # 序列存储属于训练集合的 videoIDs
-testVid
-    video_names = data[8] # 序列存储属于测试集合的 videoIDs
-vid2framelen
-    video_names = data[9] # 序列存储属于训练集合的 videoIDs

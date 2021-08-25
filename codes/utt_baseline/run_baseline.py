@@ -6,10 +6,10 @@ import argparse
 import torch
 from torch.optim import lr_scheduler
 from os.path import join
-from code.downstream.data import CustomDatasetDataLoader
-from code.downstream.models.early_fusion_multi_model import EarlyFusionMultiModel
-from code.downstream.utils.logger import get_logger
-from code.uniter.utils.save import ModelSaver
+from data import CustomDatasetDataLoader
+from models.early_fusion_multi_model import EarlyFusionMultiModel
+from utils.logger import get_logger
+from utils.save import ModelSaver
 from sklearn.metrics import accuracy_score, recall_score, f1_score, confusion_matrix
 
 def make_path(path):

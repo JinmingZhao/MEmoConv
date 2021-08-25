@@ -17,9 +17,14 @@ intra emotion inertia distribution Counter({'Neutral_Neutral': 4871, 'Anger_Ange
 然后保证每个 set 内的符合整体的分布  --- Done
 /data9/MEmoConv/memoconv/split_set
 
-### 特征根据数据集进行划分，UtteranceId 以Target中的信息为标准 -- Going
+### 定义统一的情感类别标签 
+/data9/MEmoConv/extract_fts/extract_label.py
+{'Happy':0, 'Neutral':1, 'Sad':2, 'Disgust':3, 'Anger': 4, 'Fear': 5, 'Surprise':6}
 
 ### Baseline1: 多个encoder --DDL 0825
+根据模型要求的数据格式，划分数据集并准备对应的数据
+
+
 
 ### Baseline2: MulT --DDL 0825
 
@@ -27,3 +32,34 @@ intra emotion inertia distribution Counter({'Neutral_Neutral': 4871, 'Anger_Ange
 ### 对话中的情感
 对话情感识别，需要首先获取句子级别的情感表示
 https://github.com/declare-lab/conv-emotion
+DialogRNN 数据格式要求:
+/data1/Muse_hjw/gated/DialogueGCN/tmp/IEMOCAP_features_v_frame_wth_frm_len.pkl
+videoIDs, videoSpeakers, videoLabels, videoText, videoAudio, videoVisual, videoSentence, trainVid, testVid, vid2framelen = 
+data = pkl.load(open('IEMOCAP_features_v_frame_wth_frm_len.pkl', 'rb'))
+videoIDs
+    video_names = data[0].keys()
+    video_uttIds = data[0]['Ses05F_impro08']
+videoSpeakers
+    video_names = data[1].keys()
+    video_spks = data[1]['Ses05F_impro08']  # 序列跟 video_uttIds 一一对应
+videoLabels
+    video_names = data[2].keys()
+    video_labels = data[2]['Ses05F_impro08'] # 序列跟 video_uttIds 一一对应
+videoText
+    video_names = data[3].keys()
+    video_labels = data[3]['Ses05F_impro08']  # 每句话对应100维的向量
+videoAudio
+    video_names = data[4].keys()
+    video_labels = data[4]['Ses05F_impro08']  # 每句话对应1582维的IS10特征
+videoVisual
+    video_names = data[5].keys()
+    video_labels = data[5]['Ses05F_impro08']  # 每句话对应时间序列的特征 (50,342)
+videoSentence
+    video_names = data[6].keys()
+    video_labels = data[6]['Ses05F_impro08']  #每句话的文本内容 跟 video_uttIds 一一对应
+trainVid
+    video_names = data[7] # 序列存储属于训练集合的 videoIDs
+testVid
+    video_names = data[8] # 序列存储属于测试集合的 videoIDs
+vid2framelen
+    video_names = data[9] # 序列存储属于训练集合的 videoIDs

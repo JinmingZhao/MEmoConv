@@ -1,9 +1,9 @@
 # basic paths
 dataset_name = 'IEMOCAP'
 # dataset_name = 'MSP-IMPROV'
-result_dir = '/data7/MEmoBert/evaluation/{}/results'.format(dataset_name)
-ft_dir = '/data7/MEmoBert/evaluation/{}/feature'.format(dataset_name)
-target_dir = '/data7/MEmoBert/evaluation/{}/target'.format(dataset_name)
+result_dir = '/data7/emobert/exp/evaluation/{}/results'.format(dataset_name)
+ft_dir = '/data7/emobert/exp/evaluation/{}/feature'.format(dataset_name)
+target_dir = '/data7/emobert/exp/evaluation/{}/target'.format(dataset_name)
 
 model_cfg = {
     # basic info

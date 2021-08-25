@@ -222,7 +222,7 @@ if __name__ == '__main__':
             movie_meta_info_filepath = os.path.join(target_dir, '{}_statistic.json'.format(movie_name))
             get_movie_meta_info(movie_name, meta_dir, movie_meta_info_filepath)
     
-    if True:
+    if False:
         run_num = sys.argv[1]
         print('---------------- {} -------------'.format(run_num))
         get_split_info(movies_names, target_dir, train_num=38, val_num=7, test_num=11)

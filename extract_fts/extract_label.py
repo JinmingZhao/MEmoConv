@@ -7,6 +7,8 @@ import collections
 import numpy as np
 from preprocess.FileOps import read_csv, read_pkl, write_pkl, read_file
 
+ # transfer to label Id
+emo2id_map = {'Happy':0, 'Neutral':1, 'Sad':2, 'Disgust':3, 'Anger': 4, 'Fear': 5, 'Surprise':6}
 
 def get_uttId2label(meta_filepath):
     '''
@@ -23,8 +25,8 @@ def get_uttId2label(meta_filepath):
         spk = instance[4]
         new_uttId = '{}_{}'.format(spk, UtteranceId)
         mul_emos, final_emo = instance[8].split(','), instance[9]     
-        uttId2mullabel[new_uttId] = mul_emos
-        uttId2label[new_uttId] = final_emo
+        uttId2mullabel[new_uttId] = [emo2id_map[emo] for emo in mul_emos]
+        uttId2label[new_uttId] = emo2id_map[final_emo]
     return uttId2mullabel, uttId2label
 
 if __name__ == '__main__':
@@ -35,22 +37,19 @@ if __name__ == '__main__':
     movies_names = read_file('../preprocess/movie_list.txt')
     movies_names = [movie_name.strip() for movie_name in movies_names]
 
-    if True:
-        movie2uttId2label = collections.OrderedDict()
-        movie2uttId2mul_label = collections.OrderedDict()
-        all_smooth_count = 0
-        for movie_name in movies_names:
-            print(f'Current movie {movie_name}')
-            output_label_filepath = '/data9/memoconv/modality_fts/target/movies/{}_label.pkl'.format(movie_name)
-            output_mul_label_filepath = '/data9/memoconv/modality_fts/target/movies/{}_label.pkl'.format(movie_name)
-            meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
-            smoothed_meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
-            uttId2mullabel, uttId2label = get_uttId2label(meta_filepath)
-            write_pkl(output_label_filepath, uttId2label)
-            write_pkl(output_mul_label_filepath, uttId2mullabel)
-            movie2uttId2label.update(uttId2label)
-            movie2uttId2mul_label.update(uttId2mullabel)
-        print('total {} {} utts'.format(len(movie2uttId2label), len(movie2uttId2mul_label)))
-        write_pkl(label_filepath, movie2uttId2label)
-        write_pkl(multi_label_filepath, movie2uttId2mul_label)
-    # transfer to label Id
+    movie2uttId2label = collections.OrderedDict()
+    movie2uttId2mul_label = collections.OrderedDict()
+    for movie_name in movies_names:
+        print(f'Current movie {movie_name}')
+        output_label_filepath = '/data9/memoconv/modality_fts/target/movies/{}_label.pkl'.format(movie_name)
+        output_mul_label_filepath = '/data9/memoconv/modality_fts/target/movies/{}_label.pkl'.format(movie_name)
+        meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
+        smoothed_meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
+        uttId2mullabel, uttId2label = get_uttId2label(meta_filepath)
+        write_pkl(output_label_filepath, uttId2label)
+        write_pkl(output_mul_label_filepath, uttId2mullabel)
+        movie2uttId2label.update(uttId2label)
+        movie2uttId2mul_label.update(uttId2mullabel)
+    print('total {} {} utts'.format(len(movie2uttId2label), len(movie2uttId2mul_label)))
+    write_pkl(label_filepath, movie2uttId2label)
+    write_pkl(multi_label_filepath, movie2uttId2mul_label)
