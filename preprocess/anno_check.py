@@ -62,7 +62,7 @@ def check_dialog(anno_instances):
                 cur_spk = spks[i]
         dialogid2num_turns[dialog_id] = num_turns
         total_num_turns += num_turns
-        print('dialog id {} turns {}'.format(dialog_id, num_turns))
+        # print('dialog id {} turns {}'.format(dialog_id, num_turns))
     # print('\t total turns nums {}'.format(num_turns))
     return num_dialogs, total_num_turns, num_utts, dialogid2num_turns, dialogs
 
@@ -447,7 +447,7 @@ def compute_sim_between_annotators(p1_emos, p2_emos, p3_emos, main_emos,  dialog
             p3_emo_labels = p3_emos_labels[start:end]
             dialog_sim = get_sim_score_3p(p1_emo_labels, p2_emo_labels, p3_emo_labels)
             dialog2sims[dialog_id] = dialog_sim
-            print(dialog_id, start, end, dialog_sim)
+            # print(dialog_id, start, end, dialog_sim)
             current_num = end
     else:
         dialog2sims = None
