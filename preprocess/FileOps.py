@@ -7,7 +7,7 @@ import openpyxl
 def read_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         lines = f.readlines()
-        return lines
+        return [line.strip() for line in lines]
 
 def write_file(filepath, lines):
     with open(filepath, 'w', encoding='utf-8') as f:

@@ -1,6 +1,6 @@
 '''
 采用原始的数据格式
-export PYTHONPATH=/data7/MEmoBert
+export PYTHONPATH=/data9/MEmoConv
 '''
 from builtins import zip
 import numpy as np
