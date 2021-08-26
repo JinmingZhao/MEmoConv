@@ -15,6 +15,19 @@ export PYTHONPATH=/data9/MEmoConv
     --{setname}/face_{}_ft.npy
 '''
 
+def get_set_label_info(set_movie_names_filepath, target_dir):
+    int2label, int2name = [], []
+    set_movie_names = read_file(set_movie_names_filepath)
+    set_movie_names = [name.strip() for name in set_movie_names]
+    for movie_name in set_movie_names:
+        movie_label_filepath = os.path.join(target_dir, '{}_label.pkl'.format(movie_name))
+        uttId2label = read_pkl(movie_label_filepath)
+        for uttId in uttId2label.keys():
+            int2name.append(uttId)
+            int2label.append(uttId2label[uttId])
+    assert len(int2name) == len(int2label)
+    return int2name, int2label
+
 def compute_stastic_info(lens):
     # 返回长度的中位数和80%, 95%分位点
     lens.sort()
@@ -53,19 +66,6 @@ def get_set_ft_info(set_movie_names_filepath, output_int2name_filepath, modality
     assert len(int2name) == len(set_fts)
     print(f'{modality} {feature_type} avg {avg_len} mid {mid_len} p80 {m80_len} p95 {m95_len}')
     return set_fts
-
-def get_set_label_info(set_movie_names_filepath, target_dir):
-    int2label, int2name = [], []
-    set_movie_names = read_file(set_movie_names_filepath)
-    set_movie_names = [name.strip() for name in set_movie_names]
-    for movie_name in set_movie_names:
-        movie_label_filepath = os.path.join(target_dir, '{}_label.pkl'.format(movie_name))
-        uttId2label = read_pkl(movie_label_filepath)
-        for uttId in uttId2label.keys():
-            int2name.append(uttId)
-            int2label.append(uttId2label[uttId])
-    assert len(int2name) == len(int2label)
-    return int2name, int2label
 
 
 def comparE_norm():
