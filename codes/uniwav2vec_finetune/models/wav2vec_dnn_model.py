@@ -1,6 +1,5 @@
 
 import torch
-import os
 import torch.nn.functional as F
 from transformers import Wav2Vec2Model
 from codes.uniwav2vec_finetune.models.base_model import BaseModel
@@ -33,7 +32,11 @@ class Wav2VecDNNModel(BaseModel):
         self.model_names = ['enc', 'C']
         self.pretrained_model = ['enc']
         self.netenc = Wav2Vec2Model.from_pretrained(opt.wav2vec_name)
-        self.netC = FcClassifier(768, [], opt.output_dim, dropout=0.2)
+        if 'large' in opt.wav2vec_name:
+            feature_dim = 1024
+        else:
+            feature_dim = 768
+        self.netC = FcClassifier(feature_dim, [], opt.output_dim, dropout=0.2)
             
         if self.isTrain:
             self.criterion_ce = torch.nn.CrossEntropyLoss()

@@ -21,9 +21,10 @@ train utts 17427 val utts 2821  test utts 4201
 /data9/MEmoConv/extract_fts/extract_label.py
 {'Happy':0, 'Neutral':1, 'Sad':2, 'Disgust':3, 'Anger': 4, 'Fear': 5, 'Surprise':6}
 
-### Baselin0: Bert + text + Finetune
-
-
+### Baselin0:
+Bert + text + Finetune
+wav2vec-zh + speech + Finetune
+七分类的结果都在F1=30%, WA=50%左右
 ### Baseline1: 多个encoder --Done
 根据模型要求的数据格式，划分数据集并准备对应的数据
 注意的是有一句的spk错误，所以遇到 B_jimaofeishangtian_13_6 的时候，如果key不存在，那么改为读取 A_jimaofeishangtian_13_6 的值。
@@ -35,7 +36,8 @@ train utts 17427 val utts 2821  test utts 4201
     max_acoustic_tokens = 128 (wav2vec) 256(comparE)
     max_visual_tokens = 64
 
-### Baseline2: MulT --DDL 0825
+
+### Baseline2: MulT --DDL 0825 --
 
 ### 对话中的情感
 对话情感识别，需要首先获取句子级别的情感表示

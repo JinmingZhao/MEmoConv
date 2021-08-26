@@ -5,7 +5,6 @@ import soundfile as sf
 from transformers import Wav2Vec2Processor
 from codes.uniwav2vec_finetune.data.base_dataset import BaseDataset
 
-
 class CHMEDWav2vecDataset(BaseDataset):    
     def __init__(self, opt, set_name):
         ''' CHMED dataset reader

@@ -1,7 +1,6 @@
 import os
-import sys
+import random
 import numpy as np
-from torch.autograd.grad_mode import F
 from preprocess.FileOps import read_file, read_pkl
 
 '''
@@ -68,10 +67,49 @@ def get_set_ft_info(set_movie_names_filepath, output_int2name_filepath, modality
     return set_fts
 
 
-def comparE_norm():
-    # 对于非深度学习特征要在训练集合上计算均值和方差并做归一化
-    pass
-
+def comparE_norm(feat_dir):
+    mean_std_filepath = os.path.join(feat_dir, 'train', 'speech_comparE_mean0_std1.npy')
+    train_ft_filepath = os.path.join(feat_dir, 'train', 'speech_comparE_ft.npy')
+    train_fts = np.load(train_ft_filepath, allow_pickle=True)
+    if os.path.exists(mean_std_filepath):
+        print('existing mean and std')
+        mean, std = np.load(mean_std_filepath)
+    else:
+        total = np.concatenate(train_fts, axis=0)
+        select_indexs = np.linspace(0, len(total)-1, int(len(total)/4), dtype=int)
+        print(len(select_indexs), select_indexs[:10])
+        total = [total[i] for i in select_indexs]
+        total = np.array(total, dtype=np.float32)
+        for v in total:
+            if v.shape[0] != 130:
+                print(v.shape)
+        print(total.shape)
+        mean = np.mean(total, axis=0)
+        std = np.std(total, axis=0)
+        std[std==0.0] = 1.0
+        np.save(mean_std_filepath, [mean, std])
+    print('process train')
+    norm_train_fts = []
+    for ft in train_fts:
+        norm_ft = (ft - mean) / std
+        norm_train_fts.append(norm_ft)
+    np.save(os.path.join(feat_dir, 'train', 'speech_comparE_norm_ft.npy'), norm_train_fts)
+    print('process validation')
+    val_ft_filepath = os.path.join(feat_dir, 'val', 'speech_comparE_ft.npy')
+    val_fts = np.load(val_ft_filepath, allow_pickle=True)
+    norm_val_fts = []
+    for ft in val_fts:
+        norm_ft = (ft - mean) / std
+        norm_val_fts.append(norm_ft)
+    np.save(os.path.join(feat_dir, 'val', 'speech_comparE_norm_ft.npy'), norm_val_fts)
+    print('process test')
+    test_ft_filepath = os.path.join(feat_dir, 'test', 'speech_comparE_ft.npy')
+    test_fts = np.load(test_ft_filepath, allow_pickle=True)
+    norm_test_fts = []
+    for ft in test_fts:
+        norm_ft = (ft - mean) / std
+        norm_test_fts.append(norm_ft)
+    np.save(os.path.join(feat_dir, 'test', 'speech_comparE_norm_ft.npy'), norm_test_fts)
 
 if __name__ == '__main__':
     output_dir = '/data9/memoconv/modality_fts/utt_baseline'
@@ -93,8 +131,8 @@ if __name__ == '__main__':
     if False:
         # Step2: 根据 int2name 获取对应的不同模态的特征, 注意统计长度，方便设计模型
         modality = 'speech' # text, speech, visual
-        feature_type = 'comparE'  # 'bert_base_chinese'(768), 'wav2vec'(768), 'comparE'(130) 'denseface'(342)
-        feature_dim = 130
+        feature_type = 'wav2vec_zh'  # 'bert_base_chinese'(768), 'wav2vec_zh'(1024), 'comparE'(130) 'denseface'(342)
+        feature_dim = 1024
         modality_ft_dir = os.path.join('/data9/memoconv/modality_fts/', modality, 'movies')
         for setname in ['train', 'val', 'test']:
             print('current setname {}'.format(setname))
@@ -102,3 +140,6 @@ if __name__ == '__main__':
             set_movie_names_filepath = os.path.join(split_info_dir, '{}_movie_names.txt'.format(setname))
             set_fts = get_set_ft_info(set_movie_names_filepath, output_int2name_filepath, modality_ft_dir, modality, feature_type, feature_dim)
             np.save(os.path.join(output_dir, setname, '{}_{}_ft.npy'.format(modality, feature_type)), set_fts)
+    
+    if True:
+        comparE_norm(output_dir)

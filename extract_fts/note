@@ -7,8 +7,9 @@ Text Modality:
 
 Speech Modality:
     ComparE --Done
-    wav2vec2.0 -- Done
-    IS10
+    wav2vec -- Done -- in english --discard
+    wav2vec_zh -- Done
+    IS10 
 
 Visual Modality:
     Denseface -- Done

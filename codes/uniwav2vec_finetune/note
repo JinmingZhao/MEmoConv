@@ -1,1 +1,14 @@
 同样看一下语音单模态目前最好的模型的效果，wav2vec + finetune
+
+
+
+Wav2vecDNN 的模型
+1. 英文的模型直接Finetune不行，全都到neu类别，不能好好的建模
+    facebook/wav2vec2-base
+
+2. 中文的模型直接Finetune，正常一些
+    jonatasgrosman/wav2vec2-large-xlsr-53-chinese-zh-cn
+    
+
+Wav2vecForSequenceClassification 的模型
+

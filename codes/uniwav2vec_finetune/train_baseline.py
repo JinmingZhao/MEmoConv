@@ -48,8 +48,7 @@ def clean_chekpoints(root_dir, store_epoch):
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()                        # get training options
-
-    model_name = '_'.join([opt.model, opt.dataset_mode, str(opt.lr)])    # get logger suffix
+    model_name = '_'.join([opt.model, opt.dataset_mode, opt.wav2vec_name.replace('/', '_'), str(opt.lr)])    # get logger suffix
     output_dir = os.path.join(opt.output_dir, model_name)
     make_path(output_dir)
     logger_dir = os.path.join(output_dir, 'log') # get logger path

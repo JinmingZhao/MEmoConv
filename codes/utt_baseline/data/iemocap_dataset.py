@@ -46,6 +46,7 @@ class IemocapDataset(data.Dataset):
             else:
                 example['acoustic'] = torch.cat([example['acoustic'], \
                         torch.zeros([self.opt.max_acoustic_tokens-len(example['acoustic']), self.opt.a_input_size])], dim=0)
+                        
         if 'visual' in self.exits_modality.keys():
             try:
                 example['visual'] = torch.from_numpy(self.exits_modality['visual'][index])

@@ -4,7 +4,6 @@ import json
 import numpy as np
 import argparse
 import torch
-from torch.autograd.grad_mode import F
 from torch.optim import lr_scheduler
 from os.path import join
 from data import CustomDatasetDataLoader
@@ -247,6 +246,11 @@ if __name__ == '__main__':
                         help='which dataset will consider, such as chmed/iemcoap')
     parser.add_argument('--pretained_ft_type', type=str,
                         help='which feature will be use')
+    
+    parser.add_argument('--max_epoch', type=int, default=30)
+    parser.add_argument('--patience', type=int, default=5)
+    parser.add_argument('--warmup_epoch', type=int, default=5)
+
     # for stage
     parser.add_argument("--is_test", action='store_true')
     parser.add_argument("--restore_checkpoint", default=None, help='if at testing stage, then...')

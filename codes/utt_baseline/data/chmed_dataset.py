@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from os.path import join
+from torch._C import dtype
 import torch.utils.data as data
 from torch.nn.utils.rnn import pad_sequence
 
@@ -41,15 +42,16 @@ class ChmedDataset(data.Dataset):
         '''
         example = {}
         if 'acoustic' in self.exits_modality.keys():
-            example['acoustic'] = torch.from_numpy(self.exits_modality['acoustic'][index])
+            example['acoustic'] = torch.from_numpy(np.asarray(self.exits_modality['acoustic'][index], dtype=np.float32))
             if len(example['acoustic']) >= self.opt.max_acoustic_tokens:
                 example['acoustic'] = example['acoustic'][:self.opt.max_acoustic_tokens]
             else:
                 example['acoustic'] = torch.cat([example['acoustic'], \
                         torch.zeros([self.opt.max_acoustic_tokens-len(example['acoustic']), self.opt.a_input_size])], dim=0)
+
         if 'visual' in self.exits_modality.keys():
             try:
-                example['visual'] = torch.from_numpy(self.exits_modality['visual'][index])
+                example['visual'] = torch.from_numpy(np.asarray(self.exits_modality['visual'][index], dtype=np.float32))
             except ValueError:
                 example['visual'] = torch.zeros(1, self.opt.v_input_size)
             if len(example['visual']) >= self.opt.max_visual_tokens:
@@ -59,7 +61,7 @@ class ChmedDataset(data.Dataset):
                         torch.zeros([self.opt.max_visual_tokens-len(example['visual']), self.opt.v_input_size])], dim=0)
 
         if 'text' in self.exits_modality.keys():
-            example['text'] = torch.from_numpy(self.exits_modality['text'][index])
+            example['text'] = torch.from_numpy(np.asarray(self.exits_modality['text'][index], dtype=np.float32))
             if len(example['text']) >= self.opt.max_text_tokens:
                 example['text'] = example['text'][:self.opt.max_text_tokens]
             else:
