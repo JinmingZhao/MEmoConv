@@ -2,7 +2,6 @@
 采用原始的数据格式
 export PYTHONPATH=/data7/MEmoBert
 '''
-import collections
 from builtins import zip
 import numpy as np
 import os
@@ -30,7 +29,7 @@ def get_set_bert_data(set_movie_names_filepath, output_int2name_filepath, output
             uttId2ft['B_jimaofeishangtian_13_6'] = uttId2ft['A_jimaofeishangtian_13_6']
         for uttId in uttId2ft:
             if int2name2label.get(uttId) is not None:
-                 all_sents.append([uttId2ft[uttId], int2name2label[uttId]])
+                 all_sents.append([int2name2label[uttId], uttId2ft[uttId]])
     return all_sents
 
 if __name__ == '__main__':

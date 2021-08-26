@@ -2,6 +2,7 @@
 # coding=utf-8
 # Copyright 2020 The HuggingFace Inc. team. All rights reserved.
 # https://github.com/huggingface/transformers/blob/master/examples/text-classification/run_glue_no_trainer.py
+# pip install accelerate datasets
 
 import argparse
 import math
@@ -18,11 +19,8 @@ from torch.utils.data.dataloader import DataLoader
 from tqdm.auto import tqdm
 from sklearn.metrics import accuracy_score, recall_score, f1_score, confusion_matrix
 
-from code.uniter.utils.save import ModelSaver
-from code.downstream.utils.logger import get_logger
-from code.downstream.run_baseline import clean_chekpoints
-
-import transformers
+from codes.utt_baseline.utils.save import ModelSaver
+from codes.utt_baseline.utils.logger import get_logger
 from transformers import (
     AdamW,
     AutoConfig,
@@ -36,8 +34,8 @@ from transformers import (
 def parse_args():
     parser = argparse.ArgumentParser(description="Finetune a transformers model on a text classification task")
     parser.add_argument("--gpuid", type=int, default=0)
-    parser.add_argument("--cvNo", type=int, default=1)
-    parser.add_argument("--corpus_name", type=str, default='iemocap')
+    parser.add_argument("--cvNo", type=int, default=0)
+    parser.add_argument("--corpus_name", type=str, default='chmed')
     parser.add_argument(
         "--train_file", type=str, default=None, help="A csv or a json file containing the training data."
     )
@@ -291,6 +289,8 @@ def main():
             select_metrix = 'uar'
         elif args.corpus_name == 'iemocap':
             select_metrix = 'uar'
+        elif args.corpus_name == 'chmed':
+            select_metrix = 'wf1'
         best_eval_metrix = 0
         best_eval_epoch = -1
         logger.info(f'[Info] the corpus name {args.corpus_name} and select_metrix {select_metrix}')
@@ -377,6 +377,13 @@ def compute_metrics(preds, label_ids):
     uwf1 = f1_score(label_ids, preds, average='macro')
     cm = confusion_matrix(label_ids, preds)
     return {'total':len(preds), "acc": acc, "uar": uar, "wf1": wf1, 'uwf1': uwf1, 'cm': cm}
+
+def clean_chekpoints(ckpt_dir, store_epoch):
+    # model_step_number.pt
+    for checkpoint in os.listdir(ckpt_dir):
+        if not checkpoint.endswith('_{}.pt'.format(store_epoch)):
+            if 'model_step' in checkpoint:
+                os.remove(os.path.join(ckpt_dir, checkpoint))
 
 def write_result_to_tsv(file_path, tst_log, cvNo):
     # 使用fcntl对文件加锁,避免多个不同进程同时操作同一个文件
