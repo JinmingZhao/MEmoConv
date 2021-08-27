@@ -16,7 +16,7 @@ do
         --v_ft_type denseface --v_input_size 342 --max_text_tokens 50
         --a_ft_type wav2vec_zh --a_input_size 1024 --max_acoustic_tokens 128
         --l_ft_type bert_base_chinese --l_input_size 768 --max_visual_tokens 64
-        --l_hidden_size 256 --v_hidden_size 256 --a_hidden_size 256 --mid_fusion_layers '512,256'
+        --l_hidden_size 256 --v_hidden_size 256 --a_hidden_size 512 --mid_fusion_layers '512,256'
     "
     echo "\n-------------------------------------------------------------------------------------"
     echo "Execute command: $cmd"

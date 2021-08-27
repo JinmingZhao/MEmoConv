@@ -128,7 +128,7 @@ if __name__ == '__main__':
             np.save(output_label_filepath, int2label)
             np.save(output_int2name_filepath, int2name)
     
-    if False:
+    if True:
         # Step2: 根据 int2name 获取对应的不同模态的特征, 注意统计长度，方便设计模型
         modality = 'speech' # text, speech, visual
         feature_type = 'wav2vec_zh'  # 'bert_base_chinese'(768), 'wav2vec_zh'(1024), 'comparE'(130) 'denseface'(342)
@@ -141,5 +141,5 @@ if __name__ == '__main__':
             set_fts = get_set_ft_info(set_movie_names_filepath, output_int2name_filepath, modality_ft_dir, modality, feature_type, feature_dim)
             np.save(os.path.join(output_dir, setname, '{}_{}_ft.npy'.format(modality, feature_type)), set_fts)
     
-    if True:
+    if False:
         comparE_norm(output_dir)

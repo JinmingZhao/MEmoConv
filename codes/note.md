@@ -36,10 +36,14 @@ wav2vec-zh + speech + Finetune
     max_acoustic_tokens = 128 (wav2vec) 256(comparE)
     max_visual_tokens = 64
 
-
 ### Baseline2: MulT --DDL 0825 --
 
-### 对话中的情感
+### 对话中的情感 
+先把特征都平均得到句子级别的特征，然后跑一下，dialogRNN 试试
+
+
+
+
 对话情感识别，需要首先获取句子级别的情感表示
 https://github.com/declare-lab/conv-emotion
 DialogRNN 数据格式要求:
