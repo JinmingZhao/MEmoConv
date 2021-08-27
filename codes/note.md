@@ -41,7 +41,24 @@ wav2vec-zh + speech + Finetune
 ### 对话中的情感 
 先把特征都平均得到句子级别的特征，然后跑一下，dialogRNN 试试
 
+text:
+    sent_cls_bert_base_chinese
+    sent_cls_bert_base_chinese4chmed
+    sent_cls_robert_wwm_base_chinese4chmed
+speech:
+    IS10_norm 
+    sent_avg_wav2vec_zh
+    wav2vec_zh4chmed --Pending, 需要进行模型转换
+visual:
+    sent_avg_denseface
 
+features 4 dialogRNN/DialogueGCN:
+    /data9/memoconv/modality_fts/dialogrnn/Asent_avg_wav2vec_zh_Vsent_avg_denseface_Lsent_cls_bert_base_chinese.pkl
+    /data9/memoconv/modality_fts/dialogrnn/AIS10_norm_Vsent_avg_denseface_Lsent_cls_robert_wwm_base_chinese4chmed.pkl
+
+result_dir
+    /data9/MEmoConv/memoconv/results/dialogrnn
+    /data9/MEmoConv/memoconv/results/dialoggcn
 
 
 对话情感识别，需要首先获取句子级别的情感表示

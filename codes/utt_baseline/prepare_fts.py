@@ -56,7 +56,7 @@ def get_set_ft_info(set_movie_names_filepath, output_int2name_filepath, modality
                 if len(uttId2ft[uttId].shape) == 3:
                     uttId2ft[uttId] = uttId2ft[uttId][0]
                 if uttId2ft[uttId].size == 1:
-                    print('Utt {} is None Speech'.format(uttId))
+                    print('Utt {} is None Speech/Visual'.format(uttId))
                     uttId2ft[uttId] = np.zeros([1, feature_dim])
                 set_fts.append(uttId2ft[uttId])
                 ft_lens.append(len(uttId2ft[uttId]))
@@ -65,7 +65,6 @@ def get_set_ft_info(set_movie_names_filepath, output_int2name_filepath, modality
     assert len(int2name) == len(set_fts)
     print(f'{modality} {feature_type} avg {avg_len} mid {mid_len} p80 {m80_len} p95 {m95_len}')
     return set_fts
-
 
 def comparE_norm(feat_dir):
     mean_std_filepath = os.path.join(feat_dir, 'train', 'speech_comparE_mean0_std1.npy')
@@ -111,6 +110,34 @@ def comparE_norm(feat_dir):
         norm_test_fts.append(norm_ft)
     np.save(os.path.join(feat_dir, 'test', 'speech_comparE_norm_ft.npy'), norm_test_fts)
 
+def IS10_norm(feat_dir):
+    mean_std_filepath = os.path.join(feat_dir, 'train', 'speech_IS10_mean0_std1.npy')
+    train_ft_filepath = os.path.join(feat_dir, 'train', 'speech_IS10_ft.npy')
+    train_fts = np.load(train_ft_filepath, allow_pickle=True)
+    if os.path.exists(mean_std_filepath):
+        print('existing mean and std')
+        mean, std = np.load(mean_std_filepath)
+    else:
+        total = np.array(train_fts, dtype=np.float32)
+        print(total.shape)
+        mean = np.mean(total, axis=0)
+        std = np.std(total, axis=0)
+        std[std==0.0] = 1.0
+        np.save(mean_std_filepath, [mean, std])
+    print('process train')
+    norm_train_fts = (train_fts - mean) / std
+    np.save(os.path.join(feat_dir, 'train', 'speech_IS10_norm_ft.npy'), norm_train_fts)
+    print('process validation')
+    val_ft_filepath = os.path.join(feat_dir, 'val', 'speech_IS10_ft.npy')
+    val_fts = np.load(val_ft_filepath, allow_pickle=True)
+    norm_val_fts = (val_fts - mean) / std
+    np.save(os.path.join(feat_dir, 'val', 'speech_IS10_norm_ft.npy'), norm_val_fts)
+    print('process test')
+    test_ft_filepath = os.path.join(feat_dir, 'test', 'speech_IS10_ft.npy')
+    test_fts = np.load(test_ft_filepath, allow_pickle=True)
+    norm_test_fts = (test_fts - mean) / std
+    np.save(os.path.join(feat_dir, 'test', 'speech_IS10_norm_ft.npy'), norm_test_fts)
+
 if __name__ == '__main__':
     output_dir = '/data9/memoconv/modality_fts/utt_baseline'
     split_info_dir = '/data9/MEmoConv/memoconv/split_set'
@@ -130,9 +157,10 @@ if __name__ == '__main__':
     
     if True:
         # Step2: 根据 int2name 获取对应的不同模态的特征, 注意统计长度，方便设计模型
-        modality = 'speech' # text, speech, visual
-        feature_type = 'wav2vec_zh'  # 'bert_base_chinese'(768), 'wav2vec_zh'(1024), 'comparE'(130) 'denseface'(342)
-        feature_dim = 1024
+        modality = 'visual' # text, speech, visual
+        # 'bert_base_chinese'(768), 'robert_base_wwm_chinese'(768),, 'wav2vec_zh'(1024), 'comparE'(130) 'IS10'(1582) 'denseface'(342)
+        feature_type = 'sent_avg_denseface'
+        feature_dim = 342
         modality_ft_dir = os.path.join('/data9/memoconv/modality_fts/', modality, 'movies')
         for setname in ['train', 'val', 'test']:
             print('current setname {}'.format(setname))
@@ -143,3 +171,6 @@ if __name__ == '__main__':
     
     if False:
         comparE_norm(output_dir)
+
+    if False:
+        IS10_norm(output_dir)

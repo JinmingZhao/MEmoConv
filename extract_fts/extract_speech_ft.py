@@ -161,10 +161,31 @@ def get_uttId2features(extractor, meta_filepath, movie_audio_dir):
         uttId2speechpath[new_uttId] = audio_filepath
     return uttId2speechpath, uttId2ft
 
+def get_sentence_level_ft(sent_type, output_ft_filepath, feat_dim=1024):
+    new_utt2ft = collections.OrderedDict()
+    utt2feat = read_pkl(output_ft_filepath)
+    for uttId in utt2feat.keys():
+        ft = utt2feat[uttId]
+        if ft.size == 1:
+            print('Utt {} is None Speech'.format(uttId))
+            new_ft = np.zeros(feat_dim)
+        else:
+            ft = ft[0] # bs position
+            if sent_type == 'sent_avg':
+                new_ft = np.mean(ft, axis=0)
+            elif sent_type == 'sent_cls':
+                # 最后一个时刻用于分类
+                new_ft = ft[-1]
+            else:
+                print('Error sent type {}'.format(sent_type))
+        new_utt2ft[uttId] = new_ft
+    assert len(utt2feat) == len(new_utt2ft)
+    return new_utt2ft
+
 if __name__ == '__main__':
     # export PYTHONPATH=/data9/MEmoConv
     # CUDA_VISIBLE_DEVICES=7 python extract_speech_ft.py  
-    feat_type = 'IS10'
+    feat_type = 'wav2vec_zh'
     all_output_ft_filepath = '/data9/memoconv/modality_fts/speech/all_speech_ft_{}.pkl'.format(feat_type)
     all_text_info_filepath = '/data9/memoconv/modality_fts/speech/all_speech_path_info.pkl'
     movies_names = read_file('../preprocess/movie_list.txt')
@@ -172,34 +193,49 @@ if __name__ == '__main__':
     movie2uttID2ft = collections.OrderedDict()
     movie2uttID2speechpath = collections.OrderedDict()
 
-    if feat_type == 'comparE':
-        print('Using ComparE extactor')
-        extractor = ComParEExtractor(tmp_dir='/data9/memoconv/modality_fts/speech/comparE_raw_fts')
-    elif feat_type == 'wav2vec':
-        print('Using wav2vec extactor')
-        extractor = Wav2VecExtractor(downsample=-1, gpu=0, model_name='facebook/wav2vec2-base')
-    elif feat_type == 'wav2vec_zh':
-        print('Using new wav2vec zh extactor')
-        extractor = Wav2VecExtractor(downsample=-1, gpu=0, model_name='jonatasgrosman/wav2vec2-large-xlsr-53-chinese-zh-cn')
-    elif feat_type == 'IS10':
-        print('Using IS10 extactor')
-        extractor = IS10Extractor(tmp_dir='/data9/memoconv/modality_fts/speech/IS10_raw_fts')
-    else:
-        print(f'Error feat type {feat_type}')
-
-    # extract all faces, only in the utterance
-    for movie_name in movies_names[6:]:
-        print(f'Current movie {movie_name}')
-        output_ft_filepath = '/data9/memoconv/modality_fts/speech/movies/{}_speech_ft_{}.pkl'.format(movie_name, feat_type)
-        text_info_filepath = '/data9/memoconv/modality_fts/speech/movies/{}_speechpath_info.pkl'.format(movie_name)
-        meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
-        movie_audio_dir = '/data9/memoconv/memoconv_convs_talknetoutput/{}'.format(movie_name)
-        uttId2speechpath, uttId2ft = get_uttId2features(extractor, meta_filepath, movie_audio_dir)
-        write_pkl(output_ft_filepath, uttId2ft)
-        if not os.path.exists(text_info_filepath):
-            write_pkl(text_info_filepath, uttId2speechpath)
-        movie2uttID2ft.update(uttId2ft)
-        movie2uttID2speechpath.update(uttId2speechpath)
-    write_pkl(all_output_ft_filepath, movie2uttID2ft)
-    if not os.path.exists(all_text_info_filepath):
-        write_pkl(all_text_info_filepath, movie2uttID2speechpath)
+    if False:
+        if feat_type == 'comparE':
+            print('Using ComparE extactor')
+            extractor = ComParEExtractor(tmp_dir='/data9/memoconv/modality_fts/speech/comparE_raw_fts')
+        elif feat_type == 'wav2vec':
+            print('Using wav2vec extactor')
+            extractor = Wav2VecExtractor(downsample=-1, gpu=0, model_name='facebook/wav2vec2-base')
+        elif feat_type == 'wav2vec_zh':
+            print('Using new wav2vec zh extactor')
+            extractor = Wav2VecExtractor(downsample=-1, gpu=0, model_name='jonatasgrosman/wav2vec2-large-xlsr-53-chinese-zh-cn')
+        elif feat_type == 'wav2vec_zh4chmed':
+            print('Using wav2vec zh finetuned on chmed extactor(Pending)')
+            pretrained_filepath = '/data9/MEmoConv/memoconv/results/utt_baseline/wav2vec_finetune/wav2vec_dnn_chmed_wav2vec_jonatasgrosman_wav2vec2-large-xlsr-53-chinese-zh-cn_2e-05/latest_net_enc.pth'
+            extractor = Wav2VecExtractor(downsample=-1, gpu=0, model_name=pretrained_filepath)
+        elif feat_type == 'IS10':
+            print('Using IS10 extactor')
+            extractor = IS10Extractor(tmp_dir='/data9/memoconv/modality_fts/speech/IS10_raw_fts')
+        else:
+            print(f'Error feat type {feat_type}')
+        # extract all faces, only in the utterance
+        for movie_name in movies_names:
+            print(f'Current movie {movie_name}')
+            output_ft_filepath = '/data9/memoconv/modality_fts/speech/movies/{}_speech_ft_{}.pkl'.format(movie_name, feat_type)
+            text_info_filepath = '/data9/memoconv/modality_fts/speech/movies/{}_speechpath_info.pkl'.format(movie_name)
+            meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
+            movie_audio_dir = '/data9/memoconv/memoconv_convs_talknetoutput/{}'.format(movie_name)
+            uttId2speechpath, uttId2ft = get_uttId2features(extractor, meta_filepath, movie_audio_dir)
+            write_pkl(output_ft_filepath, uttId2ft)
+            if not os.path.exists(text_info_filepath):
+                write_pkl(text_info_filepath, uttId2speechpath)
+            movie2uttID2ft.update(uttId2ft)
+            movie2uttID2speechpath.update(uttId2speechpath)
+        write_pkl(all_output_ft_filepath, movie2uttID2ft)
+        if not os.path.exists(all_text_info_filepath):
+            write_pkl(all_text_info_filepath, movie2uttID2speechpath)
+    
+    if True:
+        # get sentence-level features by cls and average pool
+        sent_type = 'sent_cls' # sent_avg, sent_cls
+        feat_dim = 1024 # wav2vec_zh 1024
+        for movie_name in movies_names:
+            print(f'Current movie {movie_name}')
+            output_ft_filepath = '/data9/memoconv/modality_fts/speech/movies/{}_speech_ft_{}.pkl'.format(movie_name, feat_type)
+            output_sent_ft_filepath = '/data9/memoconv/modality_fts/speech/movies/{}_speech_ft_{}_{}.pkl'.format(movie_name, sent_type, feat_type)
+            uttId2ft = get_sentence_level_ft(sent_type, output_ft_filepath, feat_dim)
+            write_pkl(output_sent_ft_filepath, uttId2ft)

@@ -43,31 +43,32 @@ class ChmedDataset(data.Dataset):
         example = {}
         if 'acoustic' in self.exits_modality.keys():
             example['acoustic'] = torch.from_numpy(np.asarray(self.exits_modality['acoustic'][index], dtype=np.float32))
-            if len(example['acoustic']) >= self.opt.max_acoustic_tokens:
-                example['acoustic'] = example['acoustic'][:self.opt.max_acoustic_tokens]
-            else:
-                example['acoustic'] = torch.cat([example['acoustic'], \
-                        torch.zeros([self.opt.max_acoustic_tokens-len(example['acoustic']), self.opt.a_input_size])], dim=0)
+            if len(example['acoustic'].shape) > 1:
+                if len(example['acoustic']) >= self.opt.max_acoustic_tokens:
+                    example['acoustic'] = example['acoustic'][:self.opt.max_acoustic_tokens]
+                else:
+                    example['acoustic'] = torch.cat([example['acoustic'], \
+                            torch.zeros([self.opt.max_acoustic_tokens-len(example['acoustic']), self.opt.a_input_size])], dim=0)
 
         if 'visual' in self.exits_modality.keys():
-            try:
-                example['visual'] = torch.from_numpy(np.asarray(self.exits_modality['visual'][index], dtype=np.float32))
-            except ValueError:
-                example['visual'] = torch.zeros(1, self.opt.v_input_size)
-            if len(example['visual']) >= self.opt.max_visual_tokens:
-                example['visual'] = example['visual'][:self.opt.max_visual_tokens]
-            else:
-                example['visual'] = torch.cat([example['visual'], \
-                        torch.zeros([self.opt.max_visual_tokens-len(example['visual']), self.opt.v_input_size])], dim=0)
+            example['visual'] = torch.from_numpy(np.asarray(self.exits_modality['visual'][index], dtype=np.float32))
+            if len(example['visual'].shape) > 1:
+                if len(example['visual']) >= self.opt.max_visual_tokens:
+                    example['visual'] = example['visual'][:self.opt.max_visual_tokens]
+                else:
+                    example['visual'] = torch.cat([example['visual'], \
+                            torch.zeros([self.opt.max_visual_tokens-len(example['visual']), self.opt.v_input_size])], dim=0)
 
         if 'text' in self.exits_modality.keys():
             example['text'] = torch.from_numpy(np.asarray(self.exits_modality['text'][index], dtype=np.float32))
-            if len(example['text']) >= self.opt.max_text_tokens:
-                example['text'] = example['text'][:self.opt.max_text_tokens]
-            else:
-                example['text'] = torch.cat([example['text'], \
-                        torch.zeros([self.opt.max_text_tokens-len(example['text']), self.opt.l_input_size])], dim=0)
-        
+            
+            if len(example['text'].shape) > 1:
+                if len(example['text']) >= self.opt.max_text_tokens:
+                    example['text'] = example['text'][:self.opt.max_text_tokens]
+                else:
+                    example['text'] = torch.cat([example['text'], \
+                            torch.zeros([self.opt.max_text_tokens-len(example['text']), self.opt.l_input_size])], dim=0)
+            
         label = torch.tensor(self.label[index])
         example['label'] = label
 

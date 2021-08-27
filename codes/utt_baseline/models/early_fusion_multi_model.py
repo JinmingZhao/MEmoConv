@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch import nn 
 from torch.nn import CrossEntropyLoss
 from .networks.lstm_encoder import LSTMEncoder
+from .networks.fc_encoder import FcEncoder
 from .networks.textcnn_encoder import TextCNN
 from .networks.classifier import FcClassifier
 from .networks.tools import init_weights
@@ -26,12 +27,20 @@ class EarlyFusionMultiModel(nn.Module):
         
         # acoustic model
         if 'A' in self.modality:
-            self.netA = LSTMEncoder(opt.a_input_size, opt.a_hidden_size, opt.a_embd_method, pool_len=opt.max_acoustic_tokens)
+            if 'IS10_norm' == opt.a_ft_type or opt.a_ft_type.startswith('sent'):
+                print('Use FC encoder process the IS10/Sentence-Level features')
+                self.netA = FcEncoder(opt.a_input_size, [opt.a_hidden_size]*2)
+            else:
+                self.netA = LSTMEncoder(opt.a_input_size, opt.a_hidden_size, opt.a_embd_method, pool_len=opt.max_acoustic_tokens)
             fusion_size += opt.a_hidden_size
 
         # text model
         if 'L' in self.modality:
-            self.netL = TextCNN(opt.l_input_size, opt.l_hidden_size)
+            if opt.l_ft_type.startswith('sent'):
+                print('Use FC encoder process the sentence-level text features')
+                self.netL = FcEncoder(opt.l_input_size, [opt.l_hidden_size]*2)
+            else:
+                self.netL = TextCNN(opt.l_input_size, opt.l_hidden_size)
             fusion_size += opt.l_hidden_size
 
         # visual model
@@ -39,9 +48,12 @@ class EarlyFusionMultiModel(nn.Module):
             self.front3d = ResNet3D()
             self.netV = LSTMEncoder(opt.v3d_input_size, opt.v3d_hidden_size, opt.v3d_embd_method)
             fusion_size += opt.v3d_hidden_size
-
         elif 'V' in self.modality:
-            self.netV = LSTMEncoder(opt.v_input_size, opt.v_hidden_size, opt.v_embd_method, pool_len=opt.max_visual_tokens)
+            if opt.v_ft_type.startswith('sent'):
+                print('Use FC encoder process the sentence-level visual features')
+                self.netV = FcEncoder(opt.v_input_size, [opt.v_hidden_size]*2)
+            else:
+                self.netV = LSTMEncoder(opt.v_input_size, opt.v_hidden_size, opt.v_embd_method, pool_len=opt.max_visual_tokens)
             fusion_size += opt.v_hidden_size
         
         self.netC = FcClassifier(fusion_size, fusion_layers, opt.output_dim, dropout=opt.dropout_rate, use_bn=opt.bn)

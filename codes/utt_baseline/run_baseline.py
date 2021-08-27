@@ -248,6 +248,7 @@ if __name__ == '__main__':
                         help='which feature will be use')
     
     parser.add_argument('--max_epoch', type=int, default=30)
+    parser.add_argument('--fix_lr_epoch', type=int, default=20)
     parser.add_argument('--patience', type=int, default=5)
     parser.add_argument('--warmup_epoch', type=int, default=5)
 
