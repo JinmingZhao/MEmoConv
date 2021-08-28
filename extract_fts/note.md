@@ -6,15 +6,15 @@ Text Modality:
     Glove
 
 Speech Modality:
-    ComparE --Done
-    wav2vec -- Done -- in english --discard
+    ComparE_norm --Done
     wav2vec_zh -- Done
-    IS10 
+    wav2vec_zh_finetuned -- Done
+    IS10_norm
 
 Visual Modality:
     Denseface -- Done
     openface: 68 facial landmarks, 17 facial action units, head pose, head orientation, and eye gaze.  --OpenFace
-    AffectNet -- Going -- affectnet-env
+    AffectNet: -- affectnet-env
 
 ## extracting affectnet features
 export PYTHONPATH=/data9/memoconv/tools/AffectNet

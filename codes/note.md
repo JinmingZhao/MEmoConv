@@ -51,6 +51,7 @@ speech:
     wav2vec_zh4chmed --Pending, 需要进行模型转换
 visual:
     sent_avg_denseface
+    
 
 features 4 dialogRNN/DialogueGCN:
     /data9/memoconv/modality_fts/dialogrnn/Asent_avg_wav2vec_zh_Vsent_avg_denseface_Lsent_cls_bert_base_chinese.pkl

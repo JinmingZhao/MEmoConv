@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     # test
     logger.info('Loading best model found on val set: epoch-%d' % best_eval_epoch)
-    model.load_networks(output_dir, best_eval_epoch)
+    model.load_networks(checkpoint_dir, best_eval_epoch)
 
     # # infer trn set
     ft_save_path = os.path.join(output_dir, 'epoch{}_train_ft.npy'.format(best_eval_epoch))

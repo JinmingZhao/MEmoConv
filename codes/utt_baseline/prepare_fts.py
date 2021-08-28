@@ -139,7 +139,7 @@ def IS10_norm(feat_dir):
     norm_test_fts = (test_fts - mean) / std
     np.save(os.path.join(feat_dir, 'test', 'speech_IS10_norm_ft.npy'), norm_test_fts)
 
-def get_movie_norm_ft(feat_root_dir, output_root_dir):
+def get_movie_ind_norm_ft(feat_root_dir, output_root_dir):
     # 数据方便处理，将归一化的特征按照之前的格式保存起来
     movie2utt2ft = collections.OrderedDict()
     for setname in ['train', 'val', 'test']:
@@ -164,6 +164,36 @@ def get_movie_norm_ft(feat_root_dir, output_root_dir):
         save_filepath = os.path.join(output_root_dir, '{}_speech_ft_IS10_norm.pkl'.format(movie_name))
         write_pkl(save_filepath, movie2utt2ft)
 
+def get_wav2vec_finetuned_ft(set_ft_path, save_set_ft_path, feat_type):
+    # 数据方便处理，将归一化的特征按照之前的格式保存起来
+    movie2utt2ft = collections.OrderedDict()
+    for setname in ['train', 'val', 'test']:
+        ori_set_ft_path = set_ft_path.format(setname)
+        new_save_set_ft_path = save_set_ft_path.format(setname)
+        print(ori_set_ft_path)
+        print(new_save_set_ft_path)
+        os.system('cp {} {}'.format(ori_set_ft_path, new_save_set_ft_path))
+        set_int2name_filepath = os.path.join(feat_root_dir, setname, 'int2name.npy')
+        set_fts = np.load(new_save_set_ft_path)
+        set_int2name = np.load(set_int2name_filepath)
+        assert len(set_fts) == len(set_int2name)
+        pre_movie_name = set_int2name[0].split('_')[1]
+        for uttId, ft in zip(set_int2name, set_fts):
+            movie_name = uttId.split('_')[1]
+            if pre_movie_name == movie_name:
+                movie2utt2ft[uttId] = ft
+            else:
+                print('save {} and there {} utts'.format(pre_movie_name, len(movie2utt2ft)))
+                save_filepath = os.path.join(output_root_dir, '{}_speech_ft_{}.pkl'.format(pre_movie_name, feat_type))
+                # print(save_filepath)
+                write_pkl(save_filepath, movie2utt2ft)
+                movie2utt2ft = collections.OrderedDict()
+                pre_movie_name = movie_name
+                movie2utt2ft[uttId] = ft
+        print('final movie is {} and {} utts'.format(movie_name, len(movie2utt2ft)))
+        save_filepath = os.path.join(output_root_dir, '{}_speech_ft_{}.pkl'.format(movie_name, feat_type))
+        # print(save_filepath)
+        write_pkl(save_filepath, movie2utt2ft)
 
 if __name__ == '__main__':
     output_dir = '/data9/memoconv/modality_fts/utt_baseline'
@@ -202,7 +232,17 @@ if __name__ == '__main__':
     if False:
         IS10_norm(output_dir)
 
-    if True:
+    if False:
         feat_root_dir = '/data9/memoconv/modality_fts/utt_baseline'
         output_root_dir = '/data9/memoconv/modality_fts/speech/movies'
-        get_movie_norm_ft(feat_root_dir, output_root_dir)
+        get_movie_ind_norm_ft(feat_root_dir, output_root_dir)
+
+    if True:
+        # get wav2vec finetuned features
+        feat_type = 'sent_wav2vec_zh2chmed2e5last'
+        setting_name = 'wav2vec_dnn_chmed_wav2vec_jonatasgrosman_wav2vec2-large-xlsr-53-chinese-zh-cn_2e-05'
+        feat_root_dir = '/data9/memoconv/modality_fts/utt_baseline'
+        output_root_dir = '/data9/memoconv/modality_fts/speech/movies'
+        set_ft_path = os.path.join('/data9/MEmoConv/memoconv/results/utt_baseline/wav2vec_finetune', setting_name, 'epoch6_{}_ft.npy')
+        save_set_ft_path = os.path.join(feat_root_dir, '{}/speech_'+ feat_type + '_ft.npy')
+        get_wav2vec_finetuned_ft(set_ft_path, save_set_ft_path, feat_type)

@@ -24,7 +24,6 @@ echo "Execute command: $cmd"
 echo "-------------------------------------------------------------------------------------\n"
 echo $cmd | sh
 
-
 ### for extracting features
 # cmd="python extract_ft.py --dataset_mode=chmed_wav2vec
 #     --model=wav2vec_dnn --gpu_ids=$gpu

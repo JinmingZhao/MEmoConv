@@ -2,7 +2,10 @@
 2021-08-27 09:09:09,669 - 2021-08-27-09.04.59 - INFO - [Val] result WA: 0.3839 UAR 0.2406 F1 0.2349
 2021-08-27 09:09:10,823 - 2021-08-27-09.04.59 - INFO - [Tst] result WA: 0.3632 UAR 0.2112 F1 0.2033
 
-## A-IS10_norm
+## A-IS10_norm(256)
+2021-08-27 09:18:03,477 - 2021-08-27-09.16.12 - INFO - Loading best model found on val set: epoch-38
+2021-08-27 09:18:03,663 - 2021-08-27-09.16.12 - INFO - [Val] result WA: 0.4218 UAR 0.2276 F1 0.2262
+2021-08-27 09:18:03,902 - 2021-08-27-09.16.12 - INFO - [Tst] result WA: 0.4535 UAR 0.2398 F1 0.2429
 # A_lr0.001_dp0.5_bnFalse_AIS10_norm256_Vdenseface256_Lbert_base_chinese256_F256,128_run1_self
 2021-08-27 09:18:03,477 - 2021-08-27-09.16.12 - INFO - Loading best model found on val set: epoch-38
 2021-08-27 09:18:03,663 - 2021-08-27-09.16.12 - INFO - [Val] result WA: 0.4218 UAR 0.2276 F1 0.2262
@@ -27,6 +30,14 @@ Loading best model found on val set: epoch-39
 [Val] result WA: 0.4885 UAR 0.2526 F1 0.2440
 [Tst] result WA: 0.4901 UAR 0.2365 F1 0.2269
 
+# A-sent_wav2vec_zh2chmed2e5last(256)
+2021-08-28 15:49:55,193 - 2021-08-28-15.46.39 - INFO - Loading best model found on val set: epoch-14
+2021-08-28 15:49:55,608 - 2021-08-28-15.46.39 - INFO - [Val] result WA: 0.4973 UAR 0.3262 F1 0.3382
+2021-08-28 15:49:56,732 - 2021-08-28-15.46.39 - INFO - [Tst] result WA: 0.4677 UAR 0.2847 F1 0.2913
+# A-sent_wav2vec_zh2chmed2e5last(512)
+2021-08-28 15:51:51,824 - 2021-08-28-15.47.05 - INFO - Loading best model found on val set: epoch-12
+2021-08-28 15:51:52,982 - 2021-08-28-15.47.05 - INFO - [Val] result WA: 0.4970 UAR 0.3322 F1 0.3457
+2021-08-28 15:51:54,989 - 2021-08-28-15.47.05 - INFO - [Tst] result WA: 0.4725 UAR 0.2926 F1 0.2990
 
 ## L-Bert-base-Chinese
 Loading best model found on val set: epoch-11
@@ -185,3 +196,23 @@ Loading best model found on val set: epoch-7
 [Tst] result WA: 0.4675 UAR 0.3564 F1 0.3585
 
 
+## A-sent_wav2vec_zh2chmed2e5last + V-sent_avg_DenseFace + L-sent_cls_robert_wwm_base_chinese4chmed
+当特征都是high-level特征之后，学习率可以小一点
+AVL_lr0.0002_dp0.5_bnFalse_Asent_wav2vec_zh2chmed2e5last256_Vsent_avg_denseface256_Lsent_cls_robert_wwm_base_chinese4chmed256_F512,256_run1_self
+Loading best model found on val set: epoch-6
+[Val] result WA: 0.5204 UAR 0.3859 F1 0.3945
+[Tst] result WA: 0.4846 UAR 0.3489 F1 0.3560
+
+## A-IS10_norm + V-sent_avg_DenseFace
+Loading best model found on val set: epoch-14
+[Val] result WA: 0.5186 UAR 0.3198 F1 0.3201
+[Tst] result WA: 0.4849 UAR 0.2908 F1 0.2837
+
+## A-sent_wav2vec_zh2chmed2e5last + V-sent_avg_DenseFace
+Loading best model found on val set: epoch-11
+[Val] result WA: 0.4942 UAR 0.3334 F1 0.3462
+[Tst] result WA: 0.4704 UAR 0.3000 F1 0.3077
+## A-sent_wav2vec_zh2chmed2e5last + L-sent_cls_robert_wwm_base_chinese4chmed
+Loading best model found on val set: epoch-4
+[Val] result WA: 0.5165 UAR 0.3782 F1 0.3772
+[Tst] result WA: 0.4880 UAR 0.3507 F1 0.3521
