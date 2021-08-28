@@ -203,10 +203,6 @@ if __name__ == '__main__':
         elif feat_type == 'wav2vec_zh':
             print('Using new wav2vec zh extactor')
             extractor = Wav2VecExtractor(downsample=-1, gpu=0, model_name='jonatasgrosman/wav2vec2-large-xlsr-53-chinese-zh-cn')
-        elif feat_type == 'wav2vec_zh4chmed':
-            print('Using wav2vec zh finetuned on chmed extactor(Pending)')
-            pretrained_filepath = '/data9/MEmoConv/memoconv/results/utt_baseline/wav2vec_finetune/wav2vec_dnn_chmed_wav2vec_jonatasgrosman_wav2vec2-large-xlsr-53-chinese-zh-cn_2e-05/latest_net_enc.pth'
-            extractor = Wav2VecExtractor(downsample=-1, gpu=0, model_name=pretrained_filepath)
         elif feat_type == 'IS10':
             print('Using IS10 extactor')
             extractor = IS10Extractor(tmp_dir='/data9/memoconv/modality_fts/speech/IS10_raw_fts')

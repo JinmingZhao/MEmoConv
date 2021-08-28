@@ -93,7 +93,7 @@ class CustomDatasetDataLoader():
         self.opt = opt
         dataset_class = find_dataset_using_name(opt.dataset_mode)
         self.dataset = dataset_class(opt, **kwargs)
-        print("dataset [%s] was created" % type(self.dataset).__name__)
+        print("dataset {} was created and ordered {}".format(type(self.dataset).__name__, opt.serial_batches))
         
         ''' Whether to use manual collate function defined in dataset.collate_fn'''
         if self.dataset.manual_collate_fn: 

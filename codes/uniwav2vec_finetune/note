@@ -1,5 +1,6 @@
 同样看一下语音单模态目前最好的模型的效果，wav2vec + finetune
 
+env: trans44
 
 Wav2vecDNN 的模型
 1. 英文的模型直接Finetune不行，全都到neu类别，不能好好的建模
@@ -7,11 +8,9 @@ Wav2vecDNN 的模型
 
 2. 中文wav2vec的模型直接Finetune，正常一些
     jonatasgrosman/wav2vec2-large-xlsr-53-chinese-zh-cn
+    epoch=6
     2021-08-26 19:51:38,553 - 2021-08-26-14.12.05 - INFO - Trn result of epoch 6 / 10 acc 0.9166 uar 0.8354 f1 0.8725
     2021-08-26 19:53:02,590 - 2021-08-26-14.12.05 - INFO - Val result of epoch 6 / 10 acc 0.5183 uar 0.3094 f1 0.3208
     2021-08-26 19:55:07,320 - 2021-08-26-14.12.05 - INFO - Tst result of epoch 6 / 10 acc 0.4946 uar 0.2798 f1 0.2860
 
 Wav2vecForSequenceClassification 的模型
-
-
-

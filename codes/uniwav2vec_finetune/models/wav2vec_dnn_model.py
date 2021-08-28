@@ -36,8 +36,8 @@ class Wav2VecDNNModel(BaseModel):
             feature_dim = 1024
         else:
             feature_dim = 768
-        self.netC = FcClassifier(feature_dim, [], opt.output_dim, dropout=0.2)
-            
+        self.netC = FcClassifier(feature_dim, [int(l) for l in opt.cls_layers.split(',')], opt.output_dim, dropout=0.3)
+        
         if self.isTrain:
             self.criterion_ce = torch.nn.CrossEntropyLoss()
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
@@ -59,7 +59,14 @@ class Wav2VecDNNModel(BaseModel):
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.segments = self.netenc(self.signal).last_hidden_state
-        self.segments = self.segments[:, -1]
+        # print('before {}'.format(self.segments.shape))
+        if self.opt.embd_method == 'last':
+            self.segments = self.segments[:, -1]
+        elif self.opt.embd_method == 'avg':
+            self.segments = torch.mean(self.segments, axis=1)
+        else:
+            print('Error of the embedding method')
+        # print('after {}'.format(self.segments.shape))
         self.logits, _ = self.netC(self.segments)
         self.pred = F.softmax(self.logits, dim=-1)
         
