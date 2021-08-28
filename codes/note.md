@@ -1,7 +1,7 @@
 ### 数据集集合的划分
 movie independent split
 56 movies = 38 train / 7 val / 10 trian
-990 dialogs = 750 train / 100 val / 140 test
+990 dialogs = 685 train / 126 val / 179 test
 如果要确定集合划分的话，考虑到每个集合的情感分布、情感刺激、情感惰性等分布。
 总体情感分布: utts: 24449 turns: 9082
 final_emo2count rate {'Anger': 5234, 'Neutral': 10028, 'Sad': 3957, 'Happy': 2287, 'Surprise': 1051, 'Disgust': 1497, 'Fear': 395}
@@ -55,7 +55,6 @@ visual:
 features 4 dialogRNN/DialogueGCN:
     /data9/memoconv/modality_fts/dialogrnn/Asent_avg_wav2vec_zh_Vsent_avg_denseface_Lsent_cls_bert_base_chinese.pkl
     /data9/memoconv/modality_fts/dialogrnn/AIS10_norm_Vsent_avg_denseface_Lsent_cls_robert_wwm_base_chinese4chmed.pkl
-
 result_dir
     /data9/MEmoConv/memoconv/results/dialogrnn
     /data9/MEmoConv/memoconv/results/dialoggcn
@@ -73,6 +72,7 @@ videoIDs
 videoSpeakers
     video_names = data[1].keys()
     video_spks = data[1]['Ses05F_impro08']  # 序列跟 video_uttIds 一一对应
+    # 注意spk目前是AB的形式，而不是MF的形式
 videoLabels
     video_names = data[2].keys()
     video_labels = data[2]['Ses05F_impro08'] # 序列跟 video_uttIds 一一对应

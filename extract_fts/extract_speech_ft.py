@@ -229,7 +229,7 @@ if __name__ == '__main__':
         if not os.path.exists(all_text_info_filepath):
             write_pkl(all_text_info_filepath, movie2uttID2speechpath)
     
-    if True:
+    if False:
         # get sentence-level features by cls and average pool
         sent_type = 'sent_cls' # sent_avg, sent_cls
         feat_dim = 1024 # wav2vec_zh 1024

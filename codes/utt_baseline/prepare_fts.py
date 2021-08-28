@@ -1,7 +1,8 @@
+import collections
 import os
 import random
 import numpy as np
-from preprocess.FileOps import read_file, read_pkl
+from preprocess.FileOps import read_file, read_pkl, write_pkl
 
 '''
 export PYTHONPATH=/data9/MEmoConv
@@ -138,6 +139,32 @@ def IS10_norm(feat_dir):
     norm_test_fts = (test_fts - mean) / std
     np.save(os.path.join(feat_dir, 'test', 'speech_IS10_norm_ft.npy'), norm_test_fts)
 
+def get_movie_norm_ft(feat_root_dir, output_root_dir):
+    # 数据方便处理，将归一化的特征按照之前的格式保存起来
+    movie2utt2ft = collections.OrderedDict()
+    for setname in ['train', 'val', 'test']:
+        set_ft_filepath = os.path.join(feat_root_dir, setname, 'speech_IS10_norm_ft.npy')
+        set_int2name_filepath = os.path.join(feat_root_dir, setname, 'int2name.npy')
+        set_fts = np.load(set_ft_filepath)
+        set_int2name = np.load(set_int2name_filepath)
+        assert len(set_fts) == len(set_int2name)
+        pre_movie_name = set_int2name[0].split('_')[1]
+        for uttId, ft in zip(set_int2name, set_fts):
+            movie_name = uttId.split('_')[1]
+            if pre_movie_name == movie_name:
+                movie2utt2ft[uttId] = ft
+            else:
+                print('save {} and there {} utts'.format(pre_movie_name, len(movie2utt2ft)))
+                save_filepath = os.path.join(output_root_dir, '{}_speech_ft_IS10_norm.pkl'.format(pre_movie_name))
+                write_pkl(save_filepath, movie2utt2ft)
+                movie2utt2ft = collections.OrderedDict()
+                pre_movie_name = movie_name
+                movie2utt2ft[uttId] = ft
+        print('final movie is {} and {} utts'.format(movie_name, len(movie2utt2ft)))
+        save_filepath = os.path.join(output_root_dir, '{}_speech_ft_IS10_norm.pkl'.format(movie_name))
+        write_pkl(save_filepath, movie2utt2ft)
+
+
 if __name__ == '__main__':
     output_dir = '/data9/memoconv/modality_fts/utt_baseline'
     split_info_dir = '/data9/MEmoConv/memoconv/split_set'
@@ -155,7 +182,7 @@ if __name__ == '__main__':
             np.save(output_label_filepath, int2label)
             np.save(output_int2name_filepath, int2name)
     
-    if True:
+    if False:
         # Step2: 根据 int2name 获取对应的不同模态的特征, 注意统计长度，方便设计模型
         modality = 'visual' # text, speech, visual
         # 'bert_base_chinese'(768), 'robert_base_wwm_chinese'(768),, 'wav2vec_zh'(1024), 'comparE'(130) 'IS10'(1582) 'denseface'(342)
@@ -174,3 +201,8 @@ if __name__ == '__main__':
 
     if False:
         IS10_norm(output_dir)
+
+    if True:
+        feat_root_dir = '/data9/memoconv/modality_fts/utt_baseline'
+        output_root_dir = '/data9/memoconv/modality_fts/speech/movies'
+        get_movie_norm_ft(feat_root_dir, output_root_dir)

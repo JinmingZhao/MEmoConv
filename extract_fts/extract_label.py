@@ -44,7 +44,6 @@ if __name__ == '__main__':
         output_label_filepath = '/data9/memoconv/modality_fts/target/movies/{}_label.pkl'.format(movie_name)
         output_mul_label_filepath = '/data9/memoconv/modality_fts/target/movies/{}_mul_label.pkl'.format(movie_name)
         meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
-        smoothed_meta_filepath = '/data9/memoconv/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
         uttId2mullabel, uttId2label = get_uttId2label(meta_filepath)
         write_pkl(output_label_filepath, uttId2label)
         write_pkl(output_mul_label_filepath, uttId2mullabel)
