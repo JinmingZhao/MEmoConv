@@ -9,12 +9,9 @@ densenet100_adam0.001_0.0 epoch-43
 [Val] result WA: 0.8285 UAR 0.6795 F1 0.6969
 [Tst] result WA: 0.8229 UAR 0.6450 F1 0.6716
 
-## Step2
-加入更多的数据进行训练
-/data3/zjm/dataset/SFEW_2.0
-/data3/zjm/dataset/ExpW
 
-## Step3
+
+## Step2
 实现更多的模型，比如 VggFace 以及 ResNet
 VggNet:
 vggnet_adam0.0001_0.25 epoch-68 --Use this.
@@ -81,3 +78,5 @@ resnet34_adam0.001_0.0 Or Use this one
 Loading best model found on val set: epoch-41
 [Val] result WA: 0.8218 UAR 0.6539 F1 0.6866
 [Tst] result WA: 0.8209 UAR 0.6282 F1 0.6587
+
+# Step3 加入AffectNet的数据

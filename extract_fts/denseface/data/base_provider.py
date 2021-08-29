@@ -63,10 +63,14 @@ class ImagesDataSet(data.Dataset):
             new_images[i] = self.normalize_image_by_chanel(initial_images[i])
         return new_images
 
-    def normalize_image_by_chanel(self, image):
+    def normalize_image_by_chanel(self, image, means=None, stds=None):
+        # means, stds with shape [channle, dim]
         new_image = np.zeros(image.shape)
         for chanel in range(image.shape[-1]):
-            mean = np.mean(image[:, :, chanel])
-            std = np.std(image[:, :, chanel])
-            new_image[:, :, chanel] = (image[:, :, chanel] - mean) / std
+            if means is not None and stds is not None:
+                new_image[:, :, chanel] = (image[:, :, chanel] - means[chanel]) / stds[chanel]
+            else:
+                mean = np.mean(image[:, :, chanel])
+                std = np.std(image[:, :, chanel])
+                new_image[:, :, chanel] = (image[:, :, chanel] - mean) / std
         return new_image

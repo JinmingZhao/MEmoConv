@@ -4,6 +4,7 @@ import torch.utils.data as data
 
 import cv2
 import random
+import h5py
 import numpy as np
 from os.path import join
 from .base_provider import ImagesDataSet
@@ -137,6 +138,54 @@ class FERPlusDataSet(ImagesDataSet):
         ret["images"] = images
         return ret
 
+class AffectNetDataSet(ImagesDataSet):
+    def __init__(self, config, data_dir, target_dir, setname='trn'):
+        ''' 
+        由于数据太大了，存储形式修改为 
+        提前计算好均值和方差
+        Fer plus dataset used for read one image and its transform
+        '''
+        super().__init__()
+        self.config = config
+        image_path = join(data_dir, '{}_img.h5'.format(setname))
+        target_path = join(target_dir, '{}_target.h5'.format(setname))
+        self.images = h5py.File(image_path)
+        self.label = h5py.File(target_path)
+        print('Images {} Labels {}'.format(len(self.images), len(self.label)))       
+        self._means, self._stds = np.load(join(target_dir, 'trn_mean0_std1.npy'))
+        self.manual_collate_fn = True
+
+    def __getitem__(self, index):
+        example = {}
+        image = self.images[str(index)][()]
+        image = np.expand_dims(image, -1)
+        if self.config.normalization is not None:
+            image = self.normalize_image_by_chanel(image, means=self._means, stds=self._stds)
+        if self.config.data_augmentation:
+            image = augment_image(image, pad=8)
+        image = torch.tensor(image)
+        label = torch.tensor(int(self.label[str(index)][()]))
+        example['image'] = image
+        example['label'] = label
+        return example
+    
+    @property
+    def data_shape(self):
+        return (64, 64, 1)
+
+    def __len__(self):
+        return len(self.label)
+           
+    def collate_fn(self, batch):
+        ret = {}
+        images = [sample['image'].numpy() for sample in batch]
+        labels = [sample['label'] for sample in batch]
+        labels = torch.tensor(labels)
+        images = torch.tensor(images)
+        ret["labels"] = labels
+        ret["images"] = images
+        return ret
+
 class CustomDatasetDataLoader():
     """Wrapper class of Dataset class that performs multi-threaded data loading"""
     def __init__(self, opt, data_dir, target_dir, setname='trn', is_train=True, **kwargs):
@@ -145,7 +194,14 @@ class CustomDatasetDataLoader():
         Step 2: create a multi-threaded data loader.
         """
         self.opt = opt
-        self.dataset = FERPlusDataSet(opt, data_dir, target_dir, setname, **kwargs)
+        if self.opt.dataset_type.startswith('fer'):
+            print('Using FERPlusDataSet {}'.format(setname))
+            self.dataset = FERPlusDataSet(opt, data_dir, target_dir, setname, **kwargs)
+        elif self.opt.dataset_type.startswith('affectnet'):
+            print('Using AffectNetDataSet {}'.format(setname))
+            self.dataset = AffectNetDataSet(opt, data_dir, target_dir, setname, **kwargs)
+        else:
+            print('[Error] of dataset_type name {}'.format(self.opt.dataset_type))
         
         ''' Whether to use manual collate function defined in dataset.collate_fn'''
         if self.dataset.manual_collate_fn: 

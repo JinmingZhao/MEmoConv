@@ -123,6 +123,8 @@ class DenseNet(nn.Module):
         self.bs_images = bs_images.permute(0, 3, 1, 2)
         if batch.get('labels') is not None:
             self.bs_labels = batch['labels'].to(self.device)
+        else:
+            self.bs_labels = None
 
     def forward(self):
         #input-shape: (N, Cin, H, W) 
@@ -133,7 +135,7 @@ class DenseNet(nn.Module):
         logits = self.classifier(self.out_ft)
         # print('out logits {}'.format(logits.size()))    
         self.pred = F.softmax(logits, dim=-1)
-        if getattr(self, 'bs_label', None):
+        if self.bs_labels is not None:
             self.loss = self.criterion(logits, self.bs_labels)
         
     def backward(self, max_grad=0.0):

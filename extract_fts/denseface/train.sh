@@ -1,10 +1,13 @@
-export PYTHONPATH=/data7/MEmoBert
+export PYTHONPATH=/data9/MEmoConv
 set -e
 gpu=$1
 
 #### for train 
-# python train.py --gpu_id $gpu --model_name 'densenet' \
-#     --learning_rate 0.001 --drop_rate 0.0
+# python train.py --gpu_id $gpu --model_type 'densenet' --dataset_type 'affectnet' \
+#     --learning_rate 0.001 --drop_rate 0.0 --frozen_dense_blocks 0
+
+python train.py --gpu_id $gpu --model_type 'densenet' --dataset_type 'affectnet_fer' \
+    --learning_rate 0.001 --drop_rate 0.0 --frozen_dense_blocks 0
 
 # python train.py --gpu_id $gpu --model_type 'vggnet' \
 #     --learning_rate 0.0001 --drop_rate 0.25
@@ -20,9 +23,9 @@ gpu=$1
 #     --learning_rate 0.0005 --drop_rate 0.0 \
 #     --frozen_dense_blocks 0
 
-python train.py --gpu_id $gpu --model_type 'resnet' \
-    --learning_rate 0.0005 --drop_rate 0.0 \
-    --frozen_dense_blocks 0
+# python train.py --gpu_id $gpu --model_type 'resnet' \
+#     --learning_rate 0.0005 --drop_rate 0.0 \
+#     --frozen_dense_blocks 0
 
 #### for evaluation
 # python train.py --gpu_id $gpu --config_file config/conf_fer.py \

@@ -91,7 +91,7 @@ videoSentence
     video_labels = data[6]['Ses05F_impro08']  #每句话的文本内容 跟 video_uttIds 一一对应
 trainVid
     video_names = data[7] # 序列存储属于训练集合的 videoIDs
+valVid
+    video_names = data[8] # 序列存储属于验证集合的 videoIDs
 testVid
     video_names = data[8] # 序列存储属于测试集合的 videoIDs
-vid2framelen
-    video_names = data[9] # 序列存储属于训练集合的 videoIDs

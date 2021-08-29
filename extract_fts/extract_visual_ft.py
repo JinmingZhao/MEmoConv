@@ -92,6 +92,8 @@ def compute_corpus_mean_std4denseface():
 
 class OpenFaceExtractor():
     '''
+    暂时不做这个Feature, 原因是只给脸的话Openface检测不到脸的区域(应该是根据周围环境来判断脸的区域)
+    如果直接给frame的话，又回涉及到多脸的时候的faceId的情况，openface的确定faceId的情况跟talknet采用的方法还不同，所以很复杂。
     in hzp_2240 docker
     /root/tools/OpenFace/build/bin/FeatureExtraction -fdir /data9/memoconv/memoconv_convs_talknetoutput/anjia/anjia_1/final_processed_spk2asd_faces/ -mask -out_dir /data9/memoconv/modality_fts/visual/openface_raw_save/ 
     '''
@@ -102,43 +104,38 @@ class OpenFaceExtractor():
         self.openface_dir = openface_dir
     
     def __call__(self, dialog_dir, movie_name):
-        dialog_face_dir = os.path.join(dialog_dir, 'final_processed_spk2asd_faces4openface')
-        print(dialog_face_dir)
-        dialog_id = dialog_dir.split('/')[-1]
-        save_dir = os.path.join(self.temp_save_root, movie_name, dialog_id)
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-        openface_csv_path = os.path.join(self.temp_save_root, movie_name, dialog_id, 'final_processed_spk2asd_faces4openface.csv')
-        if not os.path.exists(openface_csv_path):
-            cmd = '{}/FeatureExtraction -fdir {} -mask -out_dir {} > /dev/null 2>&1'.format(
-                        self.openface_dir, dialog_face_dir, save_dir)
-            os.system(cmd)
-        return save_dir
-    
-    @staticmethod
-    def get_openface_imgs_format(dialog_dir):
-        # 将目前的人脸按照frame-id顺序进行排序，并整理为000000.jpd的格式
+        # 如果只把处理好的人脸拿出来用的话，openface会导致检测不到人脸，所以这里要从原始的frame开始处理是准确的
+        dialog_frame_dir = os.path.join(dialog_dir, 'pyframes')
         dialog_face_dir =  os.path.join(dialog_dir, 'final_processed_spk2asd_faces')
         if not os.path.exists(dialog_face_dir):
-            return None
+            print('donot need to process this dialog {}'.format(dialog_face_dir))
         else:
-            openface_format_dir = os.path.join(dialog_dir, 'final_processed_spk2asd_faces4openface')
-            if not os.path.exists(openface_format_dir):
-                os.mkdir(openface_format_dir)
-            face_frames = os.listdir(dialog_face_dir)
-            openface_idx2facename = collections.OrderedDict()
-            count = 1
-            for frame_name in face_frames:
-                # 人脸检测不需要进行顺序，所以不需要按照frameid进行排序
-                new_frame_idx = '{:06d}'.format(count)
-                openface_idx2facename[new_frame_idx] = frame_name
-                face_filepath = os.path.join(dialog_face_dir, frame_name)
-                assert os.path.exists(face_filepath) == True
-                new_face_filepath = os.path.join(openface_format_dir, new_frame_idx + '.jpg')
-                if not os.path.exists(new_face_filepath):
-                    os.system('cp {} {}'.format(face_filepath, new_face_filepath))
-                count += 1
-            return openface_idx2facename
+            dialog_id = dialog_dir.split('/')[-1]
+            save_dir = os.path.join(self.temp_save_root, movie_name, dialog_id)
+            if not os.path.exists(save_dir):
+                os.makedirs(save_dir)
+            openface_csv_path = os.path.join(self.temp_save_root, movie_name, dialog_id, 'dialog_all_frames.csv')
+            if not os.path.exists(openface_csv_path):
+                cmd = '{}/FaceLandmarkVidMulti -fdir {} -mask -out_dir {} > /dev/null 2>&1'.format(
+                            self.openface_dir, dialog_frame_dir, save_dir)
+                os.system(cmd)
+    
+    @staticmethod
+    def get_openface_detect_result(dialog_dir, all_instances):
+        ''' 
+        得到结果之根据face对应的帧以及所在人脸的Id得到的人脸对应的信息
+        return facename2instance
+        '''
+        dialog_face_dir =  os.path.join(dialog_dir, 'final_processed_spk2asd_faces')
+        face_frames = os.listdir(dialog_face_dir)
+        openface_idx2facename = collections.OrderedDict()
+        frame_name2frame_idx = {}
+        for frame_name in face_frames:
+            frame_idx = int(frame_name.split('_')[4])
+            frame_name2frame_idx[frame_name] = frame_idx
+        frame_name2frame_idx_sorted = sorted(frame_name2frame_idx.items(),key=lambda x:x[1],reverse=False)
+        select_instances = []
+        return select_instances
 
     def normalize(self, c_array, min_c, max_c):
         # assert max_c >= min_c
@@ -321,10 +318,10 @@ if __name__ == '__main__':
             uttId2ft = get_sentence_level_ft(sent_type, output_ft_filepath, feat_dim)
             write_pkl(output_sent_ft_filepath, uttId2ft)
 
-    if True:
+    if False:
         # 整理成openface直接用的数据格式，将人脸按照00000.jpg顺序进行排序，然后抽取之后再根据对应关系找到真实的图片
         talknet_out_dir = '/data9/memoconv/memoconv_convs_talknetoutput/'
-        for movie_name in movies_names[30:]:
+        for movie_name in movies_names[:1]:
             print(f'Current movie {movie_name}')
             dialog_dirs = glob.glob(os.path.join(talknet_out_dir, movie_name, movie_name+'*'))
             dialogId2openface_idx2facename = collections.OrderedDict()
@@ -332,12 +329,11 @@ if __name__ == '__main__':
             for dialog_dir in dialog_dirs:
                 dialogId = dialog_dir.split('/')[-1]
                 print('\t current dialog {}'.format(dialogId))
-                openface_idx2facename = extractor.get_openface_imgs_format(dialog_dir)
-                if openface_idx2facename is not None:
-                    extractor(dialog_dir, movie_name)
-                    facename2ft = extractor.read_csv_ft(movie_name, dialogId, openface_idx2facename)
-                    assert len(openface_idx2facename) == len(facename2ft)
-                    dialogId2openface_idx2facename[dialogId] = openface_idx2facename
-                    dialogId2facename2ft[dialogId] = facename2ft
-            write_pkl(os.path.join('/data9/memoconv/modality_fts/visual/openface_raw_save', movie_name, 'dialogId2openface_idx2facename.pkl'), dialogId2openface_idx2facename)
-            write_pkl(os.path.join('/data9/memoconv/modality_fts/visual/openface_raw_save', movie_name, 'dialogId2facename2ft.pkl'), facename2ft)
+                extractor(dialog_dir, movie_name)
+                # facename2ft = extractor.read_csv_ft(movie_name, dialogId, openface_idx2facename)
+                # print(len(openface_idx2facename), len(facename2ft))
+                # assert len(openface_idx2facename) == len(facename2ft)
+                # dialogId2openface_idx2facename[dialogId] = openface_idx2facename
+                # dialogId2facename2ft[dialogId] = facename2ft
+            # write_pkl(os.path.join('/data9/memoconv/modality_fts/visual/openface_raw_save', movie_name, 'dialogId2openface_idx2facename.pkl'), dialogId2openface_idx2facename)
+            # write_pkl(os.path.join('/data9/memoconv/modality_fts/visual/openface_raw_save', movie_name, 'dialogId2facename2ft.pkl'), facename2ft)

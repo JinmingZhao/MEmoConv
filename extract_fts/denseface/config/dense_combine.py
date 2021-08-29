@@ -1,7 +1,7 @@
 
-data_dir = '/data3/zjm/dataset/ferplus/npy_data'
-target_dir = '/data3/zjm/dataset/ferplus/npy_data'
-result_dir = '/data7/emobert/exp/face_model'
+data_dir = '/data9/datasets/AffectNetDataset/combine_with_fer/npy_data'
+target_dir = '/data9/datasets/AffectNetDataset/combine_with_fer/npy_data'
+result_dir = '/data9/datasets/AffectNetDataset/combine_with_fer/results'
 
 ##### 由于图片大小为64*64，并且是单通道，而ImageNet则是224*224*3的图片，所以不能采用完全一致的策略.
 model_cfg = {
@@ -17,7 +17,7 @@ model_cfg = {
   'num_classes': 8,
   # train_params as below 
   'batch_size': 64,
-  'max_epoch': 100,
+  'max_epoch': 200,
   'optimizer': 'adam',
   'nesterov': True, # for sgd
   'momentum': 0.9, # for sgd
@@ -35,7 +35,7 @@ model_cfg = {
   'validation_split': None,
   'num_threads': 4,
   # for finetune
-  "frozen_dense_blocks": 1,
+  "frozen_dense_blocks": 0,
 }
 
 # denenetsmall = {
@@ -56,5 +56,3 @@ model_cfg = {
 #   'growth_rate': 12, 
 #   'block_config': (16, 16, 16), 
 # }
-
-

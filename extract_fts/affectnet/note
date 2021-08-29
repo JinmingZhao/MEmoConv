@@ -5,12 +5,19 @@ train:
 Fer数据集的数据28K图片，类别也是8类 ['neu', 'hap', 'sur', 'sad', 'ang', 'dis', 'fea', 'con']
 10倍的数据希望能表现的更好。
 
-方案1: 将affectnet的数据都转成 fer 的数据格式
+
+方案1: 将affectnet的数据都转成 fer 的数据格式 --Going
 /data3/zjm/dataset/ferplus/npy_data 是处理好的灰度图输入 train/val 以及 对应的target.
+/data9/datasets/AffectNetDataset/npy_data
+/data9/datasets/AffectNetDataset/combine_with_fer/npy_data
+fer_idx_to_class = ['Neutral', 'Happiness', 'Surprise', 'Sadness', 'Anger', 'Disgust', 'Fear', 'Contempt']
+affect_idx_to_class {"0":"Neutral", "1":"Happiness", "2":"Sadness", "3":"Surprise", "4":"Fear", "5":"Disgust", "6":"Anger", "7":"Contempt", "8":"None", "9":"Uncertain", "10":"NoFace"}
+需要做一个转化到 fer_idx_to_class
 
 
-方案2: 采用affectnet的数据格式，官方的release的模型和方法 --Adopt This --Pending
+方案2: 采用affectnet的数据格式，官方的release的模型和方法 - Pending
 使用440,000的图片
 https://github.com/behzadhsni/BReG-NeXt
 https://arxiv.org/pdf/2004.08495.pdf
 采用的是 64*64*3 数据输入
+创建 BReG 的环境 tf, 给定的模型可能是Fer上训练的模型，不确定是否是 affectNet的，所以采用方案1吧。

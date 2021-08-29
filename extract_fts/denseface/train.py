@@ -7,13 +7,13 @@ import numpy as np
 import torch
 from torch.optim import lr_scheduler
 
-from code.denseface.data.fer import CustomDatasetDataLoader
-from code.denseface.model.dense_net import DenseNet
-from code.denseface.model.vggnet import VggNet
-from code.denseface.model.resnet import ResNet
-from code.downstream.utils.logger import get_logger
-from code.downstream.run_baseline import lambda_rule
-from code.uniter.utils.save import ModelSaver
+from extract_fts.denseface.data.fer import CustomDatasetDataLoader
+from extract_fts.denseface.model.dense_net import DenseNet
+from extract_fts.denseface.model.vggnet import VggNet
+from extract_fts.denseface.model.resnet import ResNet
+from codes.utt_baseline.utils.logger import get_logger
+from codes.utt_baseline.run_baseline import lambda_rule
+from codes.utt_baseline.utils.save import ModelSaver
 from sklearn.metrics import accuracy_score, recall_score, f1_score, confusion_matrix
 
 def make_path(path):
@@ -113,7 +113,6 @@ def main(opt):
                                 weight_decay=opt.weight_decay)
 
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
-    # scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, step_size=opt.reduce_half_lr_epoch, gamma=opt.reduce_half_lr_rate)
 
     best_eval_f1 = 0              # record the best eval UAR
     patience = opt.patience
@@ -222,6 +221,9 @@ if __name__ == '__main__':
     parser.add_argument("--model_type",
                         default=None, type=str,
                         help="judge filepath [densenet, vggnet, resnet]")
+    parser.add_argument("--dataset_type",
+                        default=None, type=str,
+                        help="judge filepath [fer, affectnet, combine]")
     parser.add_argument('--gpu_id', type=int, required=True,
                         help='which gpu to run')
     parser.add_argument('--learning_rate', type=float, help='init learning rate')
@@ -231,11 +233,16 @@ if __name__ == '__main__':
     # 根据主函数传入的参数判断采用的config文件
 
     if main_args.model_type == 'densenet':
-        from code.denseface.config import dense_fer as config 
+        if main_args.dataset_type == 'fer':
+            from extract_fts.denseface.config import dense_fer as config 
+        elif main_args.dataset_type == 'affectnet':
+            from extract_fts.denseface.config import dense_affectnet as config 
+        elif main_args.dataset_type == 'affectnet_fer':
+            from extract_fts.denseface.config import dense_combine as config 
     elif main_args.model_type == 'vggnet':
-        from code.denseface.config import vgg_fer as config 
+        from extract_fts.denseface.config import vgg_fer as config 
     elif main_args.model_type == 'resnet':
-        from code.denseface.config import res_fer as config 
+        from extract_fts.denseface.config import res_fer as config 
     else:
         print("[Error] of model name")
 
