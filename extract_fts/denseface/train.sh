@@ -6,8 +6,14 @@ gpu=$1
 # python train.py --gpu_id $gpu --model_type 'densenet' --dataset_type 'affectnet' \
 #     --learning_rate 0.001 --drop_rate 0.0 --frozen_dense_blocks 0
 
+# python train.py --gpu_id $gpu --model_type 'densenet' --dataset_type 'affectnet_fer' \
+#     --learning_rate 0.001 --drop_rate 0.0 --frozen_dense_blocks 0
+
+# 继续训练
 python train.py --gpu_id $gpu --model_type 'densenet' --dataset_type 'affectnet_fer' \
-    --learning_rate 0.001 --drop_rate 0.0 --frozen_dense_blocks 0
+    --learning_rate 0.0002 --drop_rate 0.0 --frozen_dense_blocks 0 \
+    --warmup_epoch 0 \
+    --restore_checkpoint /data7/datasets/AffectNetDataset/combine_with_fer/results/densenet100_adam0.001_0.0/ckpts/model_step_8.pt
 
 # python train.py --gpu_id $gpu --model_type 'vggnet' \
 #     --learning_rate 0.0001 --drop_rate 0.25
