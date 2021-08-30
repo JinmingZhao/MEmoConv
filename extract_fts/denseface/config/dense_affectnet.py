@@ -16,7 +16,7 @@ model_cfg = {
   'drop_rate': 0.0,
   'num_classes': 8,
   # train_params as below 
-  'batch_size': 128,
+  'batch_size': 256,
   'max_epoch': 200,
   'optimizer': 'adam',
   'nesterov': True, # for sgd
