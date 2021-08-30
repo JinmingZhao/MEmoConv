@@ -9,6 +9,7 @@ import math
 from preprocess.FileOps import read_csv
 from denseface.config.dense_fer import model_cfg
 from denseface.model.dense_net import DenseNet
+from codes.utt_baseline.models.networks.resnet3d import ResNet3D
 from hook import MultiLayerFeatureExtractor
 from preprocess.FileOps import read_csv, read_pkl, write_pkl, read_file
 
@@ -89,6 +90,59 @@ def compute_corpus_mean_std4denseface():
     mean = np.mean(data)
     std = np.std(data)
     return mean, std
+
+class LipReadingExtractor():
+    '''
+    数据预处理
+    #for each frame, resize to 224x224 and crop the central 112x112 region
+    https://github.com/lordmartian/deep_avsr/blob/2fe30359162f71f2bed1b17275122c00594ad40c/video_only/utils/preprocessing.py
+    '''
+    def __init__(self, gpu_id=0, model_path=None):
+        self.model_path = model_path
+        if self.model_path is None:
+            self.model_path = "/data7/emobert/resources/pretrained/lrs2_lip_model/conv3dresnet18_visual_frontend.pt"
+        print(self.model_path)
+        self.device = torch.device("cuda:{}".format(gpu_id))
+        self.extractor = ResNet3D()
+        self.extractor.to(self.device)
+        state_dict = torch.load(self.model_path)
+        self.extractor.load_state_dict(state_dict)
+        self.extractor.eval()
+        self.dim = 512 # 每帧得到512维度的特征
+        # https://github.com/lordmartian/deep_avsr/blob/2fe30359162f71f2bed1b17275122c00594ad40c/video_only/config.py
+        self.roiSize  = 112  #height and width of input greyscale lip region patch
+        self.norm_mean = 0.4161 #mean value for normalization of greyscale lip region patch
+        self.norm_std = 0.1688
+
+    def read_img(self, img_path):
+        frame = cv2.imread(img_path)
+        grayed = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        grayed = grayed/255
+        grayed = cv2.resize(grayed, (224,224))
+        img = grayed[int(112-(self.roiSize/2)):int(112+(self.roiSize/2)), int(112-(self.roiSize/2)):int(112+(self.roiSize/2))]
+        norm_img = (img - self.norm_mean) / self.norm_std
+        return norm_img
+
+    def print_network(self):
+        self.print(self.extractor)
+    
+    def __call__(self, imgs):
+        if len(imgs) == 0:
+            # 当前视频没有帧
+            feat = np.zeros([1, self.dim]) 
+            return feat
+        input_imgs = []
+        for img_path in imgs:
+            img = self.read_img(img_path)
+            input_imgs.append(img)
+        input_imgs = torch.from_numpy(np.array(input_imgs, dtype=np.float32)).to(self.device)
+        # print('input_imgs {}'.format(input_imgs.shape))
+        # forward to (batchsize, timesteps, channle, H, W)
+        input_imgs = torch.unsqueeze(input_imgs, 0) # extent batch dim
+        input_imgs = torch.unsqueeze(input_imgs, 2) # extent channle dim
+        ft = self.extractor.forward(input_imgs)
+        return ft.detach().cpu().numpy()
+
 
 class OpenFaceExtractor():
     '''
@@ -203,7 +257,7 @@ class OpenFaceExtractor():
             frame_name = frame2openface_idx[frame_idx] # real-face-name
             facename2ft[frame_name] = {'FAU': FAU_ft, 'landmark2d':landmark2d_vec, 'head_pose': hp_ft, 'eye_gaze': eg_ft, 'combine':combine}
         return facename2ft
-    
+
 def get_uttId2features(extractor, meta_filepath, movie_visual_dir):
     '''
     spk2asd_faces_filepath: face 都是按照帧的的真实顺序排序的，所以按句子取出就行，不用再进行排序
@@ -242,6 +296,38 @@ def get_uttId2features(extractor, meta_filepath, movie_visual_dir):
         uttId2facepaths[new_uttId] = utt_facepaths
     return uttId2facepaths, uttId2fts
 
+def get_resnet3d_uttId2features(extractor, meta_filepath, movie_visual_dir):
+    '''
+    spk2asd_faces_filepath: face 都是按照帧的的真实顺序排序的，所以按句子取出就行，不用再进行排序
+    句子中的人脸也是按照frame进行排序的，同样直接取出来可以
+    new_UttId = {spk}_{dialogID}_{uttID}
+    '''
+    uttId2facepaths = collections.OrderedDict()
+    uttId2fts = collections.OrderedDict()
+    instances = read_csv(meta_filepath, delimiter=';', skip_rows=1)
+    for instance in instances:
+        UtteranceId = instance[0]
+        if UtteranceId is None:
+            continue
+        dialog_id = '_'.join(UtteranceId.split('_')[:2])
+        spk2asd_faces_filepath = os.path.join(movie_visual_dir, dialog_id, 'final_processed_spk2asd_faces.pkl')
+        spk2asd_faces = read_pkl(spk2asd_faces_filepath)
+        spk = instance[4]
+        asd_facefullnames = spk2asd_faces[spk]
+        utt_facepaths = []
+        for full_facename in asd_facefullnames:
+            temp = '_'.join(full_facename.split('_')[1:4])
+            if UtteranceId == temp:
+                face_filepath = os.path.join(movie_visual_dir, dialog_id, 'final_processed_spk2asd_faces', full_facename)
+                assert os.path.exists(face_filepath) == True
+                utt_facepaths.append(face_filepath)
+        utt_fts = extractor(utt_facepaths)
+        # print(len(utt_facepaths), utt_fts.shape)
+        new_uttId = '{}_{}'.format(spk, UtteranceId)
+        uttId2fts[new_uttId] = np.array(utt_fts[0])
+        uttId2facepaths[new_uttId] = utt_facepaths
+    return uttId2facepaths, uttId2fts
+
 def get_sentence_level_ft(sent_type, output_ft_filepath, feat_dim):
     new_utt2ft = collections.OrderedDict()
     utt2feat = read_pkl(output_ft_filepath)
@@ -261,11 +347,11 @@ def get_sentence_level_ft(sent_type, output_ft_filepath, feat_dim):
 
 if __name__ == '__main__':
     # export PYTHONPATH=/data9/MEmoConv
-    # CUDA_VISIBLE_DEVICES=6 python extract_visual_ft.py  
-    feat_type = 'openface'
+    # CUDA_VISIBLE_DEVICES=2 python extract_visual_ft.py  
+    feat_type = 'lipresnet3d'
     all_output_ft_filepath = '/data9/memoconv/modality_fts/visual/all_visual_ft_{}.pkl'.format(feat_type)
     all_text_info_filepath = '/data9/memoconv/modality_fts/visual/all_visual_path_info.pkl'
-    movies_names = read_file('../preprocess/movie_list.txt')
+    movies_names = read_file('../preprocess/movie_list_total.txt')
     movies_names = [movie_name.strip() for movie_name in movies_names]
 
     if False:
@@ -276,16 +362,16 @@ if __name__ == '__main__':
         print('Using denseface extactor')
         mean, std = 89.936089, 45.954746
         extractor = DensefaceExtractor(mean=mean, std=std)
+    elif feat_type == 'lipresnet3d':
+        extractor = LipReadingExtractor()
     elif feat_type == 'openface':
         extractor = OpenFaceExtractor()
     else:
         print(f'Error feat type {feat_type}')
 
-    if False:
-        movie2uttID2ft = collections.OrderedDict()
-        movie2uttID2visualpath = collections.OrderedDict()
+    if True:
         # # extract all faces, only in the utterance
-        for movie_name in movies_names:
+        for movie_name in movies_names[30:]:
             print(f'Current movie {movie_name}')
             output_ft_filepath = '/data9/memoconv/modality_fts/visual/movies/{}_visual_ft_{}.pkl'.format(movie_name, feat_type)
             text_info_filepath = '/data9/memoconv/modality_fts/visual/movies/{}_visualpath_info.pkl'.format(movie_name)
@@ -297,15 +383,13 @@ if __name__ == '__main__':
                 uttId2facepaths = read_pkl(text_info_filepath)
                 assert len(uttId2fts) == len(uttId2facepaths)
             else:
-                uttId2facepaths, uttId2fts = get_uttId2features(extractor, meta_filepath, movie_visual_dir)
+                if 'resnet3d' in feat_type:
+                    uttId2facepaths = uttId2fts = get_resnet3d_uttId2features(extractor, meta_filepath, movie_visual_dir)
+                else:
+                    uttId2facepaths, uttId2fts = get_uttId2features(extractor, meta_filepath, movie_visual_dir)
                 write_pkl(output_ft_filepath, uttId2fts)
                 if not os.path.exists(text_info_filepath):
                     write_pkl(text_info_filepath, uttId2facepaths)
-            movie2uttID2ft.update(uttId2fts)
-            movie2uttID2visualpath.update(uttId2facepaths)
-        write_pkl(all_output_ft_filepath, movie2uttID2ft)
-        if not os.path.exists(all_text_info_filepath):
-            write_pkl(all_text_info_filepath, movie2uttID2visualpath)
     
     if False:
         # get sentence-level features average pool

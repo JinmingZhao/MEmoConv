@@ -1,4 +1,11 @@
 # MEmoConv
+在TalkNet_ASD的环境下
+如果是3090的机器上，那么需要安装更新版本的cuda下的torch, 但是cap机器访问不了外网，所以需要手动下载
+pip3 install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0
+https://download.pytorch.org/whl/cu111/torch-1.9.0+cu111-cp37-cp37m-linux_x86_64.whl
+https://download.pytorch.org/whl/cu111/torchvision-0.10.0%2Bcu111-cp37-cp37m-linux_x86_64.whl
+https://download.pytorch.org/whl/torchaudio-0.9.0-cp37-cp37m-linux_x86_64.whl
+
 
 ## 下载数据, 可以从YouTube上下载，因为有字幕文件 --Going
 python37 环境, youtube-dl 工具

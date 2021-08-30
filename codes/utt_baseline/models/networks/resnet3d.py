@@ -88,7 +88,6 @@ class ResNet3D(nn.Module):
                             nn.MaxPool3d(kernel_size=(1,3,3), stride=(1,2,2), padding=(0,1,1))
                         )
         self.resnet = ResNet()
-        return
 
     def forward(self, inputBatch):
         # inputBatch shape: (batchsize, timesteps, channle, H, W)
