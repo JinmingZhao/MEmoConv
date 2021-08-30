@@ -1,17 +1,6 @@
 '''
 https://github.com/declare-lab/conv-emotion 中的格式进行整理
-videoIDs
-    video_names = data[0].keys()
-    video_uttIds = data[0]['Ses05F_impro08']
-videoSpeakers
-    video_names = data[1].keys()
-    video_spks = data[1]['Ses05F_impro08']  # 序列跟 video_uttIds 一一对应
-videoLabels
-    video_names = data[2].keys()
-    video_labels = data[2]['Ses05F_impro08'] # 序列跟 video_uttIds 一一对应
-videoText
-    video_names = data[3].keys()
-    video_labels = data[3]['Ses05F_impro08']  # 每句话对应100维的向量
+/data9/MEmoConv/codes/note.md
 '''
 
 import os

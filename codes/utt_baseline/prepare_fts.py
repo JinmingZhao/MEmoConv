@@ -56,6 +56,11 @@ def get_set_ft_info(set_movie_names_filepath, output_int2name_filepath, modality
             if int2name_dict.get(uttId) is not None:
                 if len(uttId2ft[uttId].shape) == 3:
                     uttId2ft[uttId] = uttId2ft[uttId][0]
+                # 异常情况处理
+                if uttId2ft[uttId].shape[-1] == 0:
+                    print('Utt {} is Feature Dim is 0'.format(uttId))
+                    uttId2ft[uttId] = np.zeros([1, feature_dim])
+                # 异常情况处理
                 if uttId2ft[uttId].size == 1:
                     print('Utt {} is None Speech/Visual'.format(uttId))
                     uttId2ft[uttId] = np.zeros([1, feature_dim])
@@ -164,7 +169,7 @@ def get_movie_ind_norm_ft(feat_root_dir, output_root_dir):
         save_filepath = os.path.join(output_root_dir, '{}_speech_ft_IS10_norm.pkl'.format(movie_name))
         write_pkl(save_filepath, movie2utt2ft)
 
-def get_wav2vec_finetuned_ft(set_ft_path, save_set_ft_path, feat_type):
+def get_wav2vec_finetuned_ft(set_ft_path, save_set_ft_path, feat_type, feat_root_dir, output_root_dir):
     # 数据方便处理，将归一化的特征按照之前的格式保存起来
     movie2utt2ft = collections.OrderedDict()
     for setname in ['train', 'val', 'test']:
@@ -212,11 +217,11 @@ if __name__ == '__main__':
             np.save(output_label_filepath, int2label)
             np.save(output_int2name_filepath, int2name)
     
-    if False:
+    if True:
         # Step2: 根据 int2name 获取对应的不同模态的特征, 注意统计长度，方便设计模型
         modality = 'visual' # text, speech, visual
         # 'bert_base_chinese'(768), 'robert_base_wwm_chinese'(768),, 'wav2vec_zh'(1024), 'comparE'(130) 'IS10'(1582) 'denseface'(342)
-        feature_type = 'sent_avg_denseface'
+        feature_type = 'denseface'
         feature_dim = 342
         modality_ft_dir = os.path.join('/data9/memoconv/modality_fts/', modality, 'movies')
         for setname in ['train', 'val', 'test']:
@@ -237,7 +242,7 @@ if __name__ == '__main__':
         output_root_dir = '/data9/memoconv/modality_fts/speech/movies'
         get_movie_ind_norm_ft(feat_root_dir, output_root_dir)
 
-    if True:
+    if False:
         # get wav2vec finetuned features
         feat_type = 'sent_wav2vec_zh2chmed2e5last'
         setting_name = 'wav2vec_dnn_chmed_wav2vec_jonatasgrosman_wav2vec2-large-xlsr-53-chinese-zh-cn_2e-05'
@@ -245,4 +250,4 @@ if __name__ == '__main__':
         output_root_dir = '/data9/memoconv/modality_fts/speech/movies'
         set_ft_path = os.path.join('/data9/MEmoConv/memoconv/results/utt_baseline/wav2vec_finetune', setting_name, 'epoch6_{}_ft.npy')
         save_set_ft_path = os.path.join(feat_root_dir, '{}/speech_'+ feat_type + '_ft.npy')
-        get_wav2vec_finetuned_ft(set_ft_path, save_set_ft_path, feat_type)
+        get_wav2vec_finetuned_ft(set_ft_path, save_set_ft_path, feat_type, feat_root_dir, output_root_dir)

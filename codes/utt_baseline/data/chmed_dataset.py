@@ -61,7 +61,6 @@ class ChmedDataset(data.Dataset):
 
         if 'text' in self.exits_modality.keys():
             example['text'] = torch.from_numpy(np.asarray(self.exits_modality['text'][index], dtype=np.float32))
-            
             if len(example['text'].shape) > 1:
                 if len(example['text']) >= self.opt.max_text_tokens:
                     example['text'] = example['text'][:self.opt.max_text_tokens]

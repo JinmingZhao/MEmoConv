@@ -26,6 +26,7 @@ model_cfg = {
   'reduce_half_lr_epoch': 40,
   'reduce_half_lr_rate': 0.5,  # epochs * 0.5
   'patience': 5,
+  'fix_lr_epoch': 50,
   'warmup_epoch': 4,
   'warmup_decay': 0.1,
   'shuffle': 'every_epoch',  # None, once_prior_train, every_epoch
