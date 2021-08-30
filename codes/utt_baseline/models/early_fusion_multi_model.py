@@ -76,8 +76,7 @@ class EarlyFusionMultiModel(nn.Module):
             self.text = batch['text'].float().to(self.device)
 
         if "V3d" in self.modality:
-            # default (batchsize, timesteps=50, img-size, img-size)
-            # to (batchsize, timesteps=50, Channel=1, img-size, img-size)
+            # default (batchsize, timesteps=50, img-size, img-size) to (batchsize, timesteps=50, Channel=1, img-size, img-size)
             viusal_input = torch.unsqueeze(batch['visual3d'], 2)
             self.visual = viusal_input.float().to(self.device)
 

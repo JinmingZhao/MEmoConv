@@ -182,6 +182,11 @@ Loading best model found on val set: epoch-7
 [Val] result WA: 0.5285 UAR 0.3888 F1 0.3950
 [Tst] result WA: 0.5054 UAR 0.3550 F1 0.3696
 
+## A-IS10_norm + V-DenseFace + L-sent_cls_robert_wwm_base_chinese4chmed
+Loading best model found on val set: epoch-14
+[Val] result WA: 0.5353 UAR 0.4040 F1 0.4048
+[Tst] result WA: 0.5056 UAR 0.3778 F1 0.3808
+
 ## A-IS10_norm + L-sent_cls_robert_wwm_base_chinese4chmed（IS10表现要更好一些）
 [Val] result WA: 0.4963 UAR 0.3564 F1 0.3527
 [Tst] result WA: 0.4942 UAR 0.3433 F1 0.3500
