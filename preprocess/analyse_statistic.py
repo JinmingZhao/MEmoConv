@@ -208,6 +208,25 @@ def compute_emotion_distribution(movies_names):
     intra_emo_inertia2count = Counter(intra_emotion_inertia)
     print(f'intra  emotion inertia distribution {intra_emo_inertia2count}')
 
+def get_basic_info(movies_names, statistic_filepath):
+    all_instances = read_xls(statistic_filepath, sheetname='sheet1', skip_rows=1)
+    count_movies = 0
+    count_dialogs = 0
+    count_turns = 0
+    count_utts = 0
+    for instance in all_instances:
+        movies_name, num_dialog, num_turn, num_utt = [ins.value for ins in instance[:4]]
+        if movies_name in movies_names:
+            count_movies += 1
+            count_dialogs += int(num_dialog)
+            count_turns += int(num_turn)
+            count_utts += int(num_utt)
+    avg_turns_dialog = round(count_turns/count_dialogs, 2)
+    avg_utts_turn = round(count_utts/count_turns, 2)
+    avg_utts_dialog = round(count_utts/count_dialogs, 2)
+    print('movies {} dialogs {} turns {} utts {} avg_turns {}, avg_utts_turn {} avg_utts_dialog {}'.format(
+            count_movies, count_dialogs, count_turns, count_utts, avg_turns_dialog, avg_utts_turn, avg_utts_dialog))
+
 def write_meta_json_info():
     '''
     {'dialogId':
@@ -236,16 +255,21 @@ def write_meta_json_info():
 
 if __name__ == '__main__':
 
-    movies_names = read_file('movie_list.txt')
+    set_name = 'total'
+    movies_names = read_file('movie_list_{}.txt'.format(set_name))
     movies_names = [movie_name.strip() for movie_name in movies_names]
+    statistic_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/statistic.xlsx'
+
+    if True:
+        get_basic_info(movies_names, statistic_filepath)
 
     if True:
         compute_global_fleiss_kappa(movies_names)
     
-    if False:
+    if True:
         compute_corpus_duration(movies_names)
     
-    if False:
+    if True:
         dialog_spk_info_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/dialogSpkAnnoUpdate.xlsx'
         compute_spk_age_gender(movies_names, dialog_spk_info_filepath)
 
