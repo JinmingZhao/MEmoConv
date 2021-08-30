@@ -1,4 +1,4 @@
-## A-comparE_norm_norm
+## A-comparE_norm
 2021-08-27 09:09:09,669 - 2021-08-27-09.04.59 - INFO - [Val] result WA: 0.3839 UAR 0.2406 F1 0.2349
 2021-08-27 09:09:10,823 - 2021-08-27-09.04.59 - INFO - [Tst] result WA: 0.3632 UAR 0.2112 F1 0.2033
 
@@ -6,12 +6,16 @@
 2021-08-27 09:18:03,477 - 2021-08-27-09.16.12 - INFO - Loading best model found on val set: epoch-38
 2021-08-27 09:18:03,663 - 2021-08-27-09.16.12 - INFO - [Val] result WA: 0.4218 UAR 0.2276 F1 0.2262
 2021-08-27 09:18:03,902 - 2021-08-27-09.16.12 - INFO - [Tst] result WA: 0.4535 UAR 0.2398 F1 0.2429
+
+## A-IS10_norm(512)
+
+
 # A_lr0.001_dp0.5_bnFalse_AIS10_norm256_Vdenseface256_Lbert_base_chinese256_F256,128_run1_self
 2021-08-27 09:18:03,477 - 2021-08-27-09.16.12 - INFO - Loading best model found on val set: epoch-38
 2021-08-27 09:18:03,663 - 2021-08-27-09.16.12 - INFO - [Val] result WA: 0.4218 UAR 0.2276 F1 0.2262
 2021-08-27 09:18:03,902 - 2021-08-27-09.16.12 - INFO - [Tst] result WA: 0.4535 UAR 0.2398 F1 0.2429
 
-## A-Wav2vec-zh > comparE_norm
+## A-wav2vec_zh > comparE_norm
 2021-08-26 19:42:42,351 - 2021-08-26-17.54.29 - INFO - [Val] result WA: 0.3988 UAR 0.2446 F1 0.2476
 2021-08-26 19:42:44,659 - 2021-08-26-17.54.29 - INFO - [Tst] result WA: 0.4006 UAR 0.2336 F1 0.2363
 
@@ -20,7 +24,7 @@
 2021-08-27 03:12:21,399 - 2021-08-27-03.06.50 - INFO - [Val] result WA: 0.4424 UAR 0.2605 F1 0.2647
 2021-08-27 03:12:23,569 - 2021-08-27-03.06.50 - INFO - [Tst] result WA: 0.4275 UAR 0.2432 F1 0.2469
 
-# A-sent_cls-Wav2vec-zh（256）
+# A-sent_last-Wav2vec-zh（256）
 2021-08-27 14:18:50,333 - 2021-08-27-14.16.15 - INFO - Loading best model found on val set: epoch-21
 2021-08-27 14:18:50,808 - 2021-08-27-14.16.15 - INFO - [Val] result WA: 0.4406 UAR 0.2114 F1 0.1890
 2021-08-27 14:18:51,542 - 2021-08-27-14.16.15 - INFO - [Tst] result WA: 0.4692 UAR 0.2169 F1 0.1983
@@ -30,11 +34,11 @@ Loading best model found on val set: epoch-39
 [Val] result WA: 0.4885 UAR 0.2526 F1 0.2440
 [Tst] result WA: 0.4901 UAR 0.2365 F1 0.2269
 
-# A-sent_wav2vec_zh2chmed2e5last(256)
+# A-sent_wav2vec_zh2chmed2e5last(256) 
 2021-08-28 15:49:55,193 - 2021-08-28-15.46.39 - INFO - Loading best model found on val set: epoch-14
 2021-08-28 15:49:55,608 - 2021-08-28-15.46.39 - INFO - [Val] result WA: 0.4973 UAR 0.3262 F1 0.3382
 2021-08-28 15:49:56,732 - 2021-08-28-15.46.39 - INFO - [Tst] result WA: 0.4677 UAR 0.2847 F1 0.2913
-# A-sent_wav2vec_zh2chmed2e5last(512)
+# A-sent_wav2vec_zh2chmed2e5last(512) -- use this
 2021-08-28 15:51:51,824 - 2021-08-28-15.47.05 - INFO - Loading best model found on val set: epoch-12
 2021-08-28 15:51:52,982 - 2021-08-28-15.47.05 - INFO - [Val] result WA: 0.4970 UAR 0.3322 F1 0.3457
 2021-08-28 15:51:54,989 - 2021-08-28-15.47.05 - INFO - [Tst] result WA: 0.4725 UAR 0.2926 F1 0.2990
