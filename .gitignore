@@ -1,3 +1,4 @@
 ./preprocess/*.pyc
 *.pyc
 .DS_Store
+ preprocess/__pycache__/*.pyc
