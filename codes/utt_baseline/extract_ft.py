@@ -6,10 +6,10 @@ import argparse
 import torch
 from torch.optim import lr_scheduler
 from os.path import join
-from codes.utt_baseline.data import CustomDatasetDataLoader
-from codes.utt_baseline.models.early_fusion_multi_model import EarlyFusionMultiModel
-from codes.utt_baseline.utils.logger import get_logger
-from codes.utt_baseline.utils.save import ModelSaver
+from data import CustomDatasetDataLoader
+from models.early_fusion_multi_model import EarlyFusionMultiModel
+from utils.logger import get_logger
+from utils.save import ModelSaver
 from sklearn.metrics import accuracy_score, recall_score, f1_score, confusion_matrix
 
 def make_path(path):
@@ -274,7 +274,6 @@ if __name__ == '__main__':
     parser.add_argument('--max_text_tokens', type=int, default=20)
     parser.add_argument('--max_acoustic_tokens', type=int, default=128)
     parser.add_argument('--max_visual_tokens', type=int, default=64)
-    parser.add_argument('--v3d_embd_method', type=str, default='last')
 
     parser.add_argument('--postfix', required=True, default='None',
                         help='postfix for the output dir')

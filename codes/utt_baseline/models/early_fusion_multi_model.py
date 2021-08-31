@@ -46,8 +46,8 @@ class EarlyFusionMultiModel(nn.Module):
         # visual model
         if 'V3d' in self.modality:
             self.front3d = ResNet3D()
-            self.netV = LSTMEncoder(opt.v3d_input_size, opt.v3d_hidden_size, opt.v3d_embd_method)
-            fusion_size += opt.v3d_hidden_size
+            self.netV = LSTMEncoder(opt.v_input_size, opt.v_hidden_size, opt.v3d_embd_method)
+            fusion_size += opt.v_hidden_size
         elif 'V' in self.modality:
             if opt.v_ft_type.startswith('sent'):
                 print('Use FC encoder process the sentence-level visual features')
@@ -77,9 +77,7 @@ class EarlyFusionMultiModel(nn.Module):
 
         if "V3d" in self.modality:
             # default (batchsize, timesteps=50, img-size, img-size) to (batchsize, timesteps=50, Channel=1, img-size, img-size)
-            viusal_input = torch.unsqueeze(batch['visual3d'], 2)
-            self.visual = viusal_input.float().to(self.device)
-
+            self.visual = batch['visual3d'].float().to(self.device)
         elif "V" in self.modality:
             self.visual = batch['visual'].float().to(self.device)
 

@@ -1,8 +1,45 @@
+import os
 import torch
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 import pickle
 import pandas as pd
+
+class CHMEDDataset(Dataset):
+    def __init__(self, root_dir, path, train='train'):
+        ft_filepath = os.path.join(root_dir, '{}.pkl'.format(path))
+        self.videoIDs, self.videoSpeakers, self.videoLabels, self.videoText,\
+        self.videoAudio, self.videoVisual, self.videoSentence, self.trainVid,\
+        self.validVid, self.testVid = pickle.load(open(ft_filepath, 'rb'), encoding='latin1')
+        '''
+        {'Happy':0, 'Neutral':1, 'Sad':2, 'Disgust':3, 'Anger': 4, 'Fear': 5, 'Surprise':6}
+        '''
+        if train=='train':
+            self.keys = self.trainVid
+        elif train=='val':
+            self.keys = self.validVid
+        else:
+            self.keys = self.testVid
+        self.len = len(self.keys)
+
+    def __getitem__(self, index):
+        vid = self.keys[index]
+        return torch.FloatTensor(self.videoText[vid]),\
+               torch.FloatTensor(self.videoVisual[vid]),\
+               torch.FloatTensor(self.videoAudio[vid]),\
+               torch.FloatTensor([[1,0] if x=='A' else [0,1] for x in\
+                                  self.videoSpeakers[vid]]),\
+               torch.FloatTensor([1]*len(self.videoLabels[vid])),\
+               torch.LongTensor(self.videoLabels[vid]),\
+               vid
+
+    def __len__(self):
+        return self.len
+
+    def collate_fn(self, data):
+        dat = pd.DataFrame(data)
+        return [pad_sequence(dat[i]) if i<4 else pad_sequence(dat[i], True) if i<6 else dat[i].tolist() for i in dat]
+
 
 class IEMOCAPDataset(Dataset):
 
@@ -34,38 +71,6 @@ class IEMOCAPDataset(Dataset):
     def collate_fn(self, data):
         dat = pd.DataFrame(data)
         return [pad_sequence(dat[i]) if i<4 else pad_sequence(dat[i], True) if i<6 else dat[i].tolist() for i in dat]
-
-
-class CHMEDDataset(Dataset):
-    def __init__(self, path, train=True):
-        self.videoIDs, self.videoSpeakers, self.videoLabels, self.videoText,\
-        self.videoAudio, self.videoVisual, self.videoSentence, self.trainVid,\
-        self.valVid, self.testVid = pickle.load(open(path, 'rb'), encoding='latin1')
-        '''
-        label index mapping = {'hap':0, 'sad':1, 'neu':2, 'ang':3, 'exc':4, 'fru':5}
-        '''
-        self.keys = [x for x in (self.trainVid if train else self.testVid)]
-
-        self.len = len(self.keys)
-
-    def __getitem__(self, index):
-        vid = self.keys[index]
-        return torch.FloatTensor(self.videoText[vid]),\
-               torch.FloatTensor(self.videoVisual[vid]),\
-               torch.FloatTensor(self.videoAudio[vid]),\
-               torch.FloatTensor([[1,0] if x=='A' else [0,1] for x in\
-                                  self.videoSpeakers[vid]]),\
-               torch.FloatTensor([1]*len(self.videoLabels[vid])),\
-               torch.LongTensor(self.videoLabels[vid]),\
-               vid
-
-    def __len__(self):
-        return self.len
-
-    def collate_fn(self, data):
-        dat = pd.DataFrame(data)
-        return [pad_sequence(dat[i]) if i<4 else pad_sequence(dat[i], True) if i<6 else dat[i].tolist() for i in dat]
-
 class AVECDataset(Dataset):
 
     def __init__(self, path, train=True):

@@ -19,6 +19,7 @@ class DensefaceExtractor():
             cfg = model_cfg
         if model_path is None:
             model_path = "/data7/emobert/exp/face_model/densenet100_adam0.001_0.0/ckpts/model_step_43.pt"
+        print('Resorting from {}'.format(model_path))
         self.device = torch.device("cuda:{}".format(gpu_id))
         self.extractor = DenseNet(gpu_id, **cfg)
         self.extractor.to(self.device)
@@ -129,7 +130,7 @@ class LipReadingExtractor():
     def __call__(self, imgs):
         if len(imgs) == 0:
             # 当前视频没有帧
-            feat = np.zeros([1, self.dim]) 
+            feat = np.zeros([1, 1, self.dim])
             return feat
         input_imgs = []
         for img_path in imgs:
@@ -143,6 +144,58 @@ class LipReadingExtractor():
         ft = self.extractor.forward(input_imgs)
         return ft.detach().cpu().numpy()
 
+class RawFeatureExtractor():
+    '''
+    数据预处理
+    affectNet: mean 0.353068, std 0.180232
+    #for each frame, resize to 112*112
+    '''
+    def __init__(self, norm_mean=None, norm_std=None):
+        self.roiSize  = 112  #height and width of input greyscale lip region patch
+        self.norm_mean = norm_mean
+        self.norm_std = norm_std
+
+    def read_img(self, img_path):
+        # 后续根据均值和方差计算之后再归一化
+        frame = cv2.imread(img_path)
+        grayed = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        grayed = grayed/255
+        grayed = cv2.resize(grayed, (self.roiSize, self.roiSize))
+        if self.norm_mean is not None and self.norm_std is not None:
+            grayed = (grayed - self.norm_mean) - self.norm_std
+        return grayed
+
+    def compute_corpus_mean_std(self):
+        # 整个数据集一半的图片计算的
+        all_pics = glob.glob('/data9/memoconv/memoconv_convs_talknetoutput/*/*/final_processed_spk2asd_faces/*.jpg')
+        print('total pics {}'.format(len(all_pics))) # 879K
+        data = []
+        count = 0
+        for pic in tqdm(all_pics):
+            count += 1
+            if count % 2 == 0:
+                continue
+            _d = self.read_img(pic)
+            data.append(_d)
+        data = np.array(data).astype(np.float32)
+        print('Total Data Shape:', data.shape)
+        mean = np.mean(data)
+        std = np.std(data)
+        return mean, std
+    
+    def __call__(self, imgs):
+        if len(imgs) == 0:
+            # 当前视频没有帧
+            input_imgs = np.zeros((1, self.roiSize, self.roiSize))
+        else:
+            input_imgs = []
+            for img_path in imgs:
+                img = self.read_img(img_path)
+                input_imgs.append(img)
+            input_imgs = np.array(input_imgs)
+        # add the channel dim
+        input_imgs = np.expand_dims(input_imgs, 1)
+        return input_imgs
 
 class OpenFaceExtractor():
     '''
@@ -324,7 +377,7 @@ def get_resnet3d_uttId2features(extractor, meta_filepath, movie_visual_dir):
         utt_fts = extractor(utt_facepaths)
         # print(len(utt_facepaths), utt_fts.shape)
         new_uttId = '{}_{}'.format(spk, UtteranceId)
-        uttId2fts[new_uttId] = np.array(utt_fts[0])
+        uttId2fts[new_uttId] = np.array(utt_fts)
         uttId2facepaths[new_uttId] = utt_facepaths
     return uttId2facepaths, uttId2fts
 
@@ -347,8 +400,8 @@ def get_sentence_level_ft(sent_type, output_ft_filepath, feat_dim):
 
 if __name__ == '__main__':
     # export PYTHONPATH=/data9/MEmoConv
-    # CUDA_VISIBLE_DEVICES=2 python extract_visual_ft.py  
-    feat_type = 'lipresnet3d'
+    # CUDA_VISIBLE_DEVICES=4 python extract_visual_ft.py  
+    feat_type = 'affectdenseface'
     all_output_ft_filepath = '/data9/memoconv/modality_fts/visual/all_visual_ft_{}.pkl'.format(feat_type)
     all_text_info_filepath = '/data9/memoconv/modality_fts/visual/all_visual_path_info.pkl'
     movies_names = read_file('../preprocess/movie_list_total.txt')
@@ -357,13 +410,27 @@ if __name__ == '__main__':
     if False:
         mean, std = compute_corpus_mean_std4denseface()
         print('mean {:.6f}, std {:.6f}'.format(mean, std))
+    
+    if False:
+        extractor = RawFeatureExtractor(norm_mean=None, norm_std=None)
+        mean, std = extractor.compute_corpus_mean_std()
+        print('mean {:.6f}, std {:.6f}'.format(mean, std))
 
     if feat_type == 'denseface':
         print('Using denseface extactor')
         mean, std = 89.936089, 45.954746
         extractor = DensefaceExtractor(mean=mean, std=std)
+    if feat_type == 'affectdenseface':
+        print('Using affectdenseface extactor')
+        mean, std = 89.936089, 45.954746
+        model_path = '/data9/datasets/AffectNetDataset/combine_with_fer/results/densenet100_adam0.0002_0.0/ckpts/model_step_12.pt'
+        extractor = DensefaceExtractor(model_path=model_path, mean=mean, std=std)
     elif feat_type == 'lipresnet3d':
+        mean, std = None, None
         extractor = LipReadingExtractor()
+    elif feat_type == 'rawimg4resnet3d':
+        mean, std = 0.353068, 0.180232
+        extractor = RawFeatureExtractor(norm_mean=mean, norm_std=std)
     elif feat_type == 'openface':
         extractor = OpenFaceExtractor()
     else:
@@ -371,7 +438,7 @@ if __name__ == '__main__':
 
     if True:
         # # extract all faces, only in the utterance
-        for movie_name in movies_names[30:]:
+        for movie_name in movies_names[40:]:
             print(f'Current movie {movie_name}')
             output_ft_filepath = '/data9/memoconv/modality_fts/visual/movies/{}_visual_ft_{}.pkl'.format(movie_name, feat_type)
             text_info_filepath = '/data9/memoconv/modality_fts/visual/movies/{}_visualpath_info.pkl'.format(movie_name)
@@ -384,7 +451,7 @@ if __name__ == '__main__':
                 assert len(uttId2fts) == len(uttId2facepaths)
             else:
                 if 'resnet3d' in feat_type:
-                    uttId2facepaths = uttId2fts = get_resnet3d_uttId2features(extractor, meta_filepath, movie_visual_dir)
+                    uttId2facepaths, uttId2fts = get_resnet3d_uttId2features(extractor, meta_filepath, movie_visual_dir)
                 else:
                     uttId2facepaths, uttId2fts = get_uttId2features(extractor, meta_filepath, movie_visual_dir)
                 write_pkl(output_ft_filepath, uttId2fts)

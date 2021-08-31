@@ -191,10 +191,15 @@ class DialogueRNN(nn.Module):
 
         return e,alpha # seq_len, batch, D_e
 class BiModel(nn.Module):
-
+    '''
+    D_m: multi-modalities fusion dim -- 2000左右
+    D_g: global rnn -- 512
+    D_p: personal rnn  -- 512
+    D_e: emotion rnn -- 128
+    D_h: classification linear --100
+    '''
     def __init__(self, D_m, D_g, D_p, D_e, D_h,
-                 n_classes=7, listener_state=False, context_attention='simple', D_a=100, dropout_rec=0.5,
-                 dropout=0.5):
+                 n_classes=7, listener_state=False, context_attention='simple', D_a=100, dropout_rec=0.5, dropout=0.5):
         super(BiModel, self).__init__()
 
         self.D_m       = D_m
@@ -234,7 +239,6 @@ class BiModel(nn.Module):
         U -> seq_len, batch, D_m
         qmask -> seq_len, batch, party
         """
-
         emotions_f, alpha_f = self.dialog_rnn_f(U, qmask) # seq_len, batch, D_e
         emotions_f = self.dropout_rec(emotions_f)
         rev_U = self._reverse_seq(U, umask)
@@ -541,7 +545,6 @@ if torch.cuda.is_available():
     FloatTensor = torch.cuda.FloatTensor
     LongTensor = torch.cuda.LongTensor
     ByteTensor = torch.cuda.ByteTensor
-
 else:
     FloatTensor = torch.FloatTensor
     LongTensor = torch.LongTensor
