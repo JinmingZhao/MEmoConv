@@ -126,3 +126,7 @@ if __name__ == '__main__':
     
     if False:
         combine_with_fer(output_dir, fer_data_dir, combine_data_dir)
+
+    if True:
+        # prepare imgs for v3d (112,112)
+        pass

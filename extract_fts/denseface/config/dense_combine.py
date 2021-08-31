@@ -25,7 +25,7 @@ model_cfg = {
   'learning_rate': 0.001,
   'reduce_half_lr_epoch': 40,
   'reduce_half_lr_rate': 0.5,  # epochs * 0.5
-  'patience': 5,
+  'patience': 10,
   'fix_lr_epoch': 50,
   'warmup_epoch': 4,
   'warmup_decay': 0.1,

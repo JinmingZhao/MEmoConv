@@ -90,8 +90,8 @@ def main(opt):
     logger.info(model)
 
     # Prepare model
-    if opt.is_test and opt.restore_checkpoint:
-        logger.info('[Model] At testing stage and restore from {}'.format(opt.restore_checkpoint))
+    if opt.restore_checkpoint:
+        logger.info('[Model] restore from {}'.format(opt.restore_checkpoint))
         checkpoint = torch.load(opt.restore_checkpoint)
         model.load_state_dict(checkpoint)
     else:
@@ -117,6 +117,10 @@ def main(opt):
     best_eval_f1 = 0              # record the best eval UAR
     patience = opt.patience
     
+    if opt.restore_checkpoint:
+        val_log = evaluation(model, val_db, save_dir=log_dir, set_name='val')
+        logger.info('\t Retoreed model performance {}'.format(val_log))
+
     for epoch in range(opt.max_epoch):
         for i, batch in enumerate(trn_db):  # inner loop within one epoch
             model.set_input(batch)   
@@ -226,6 +230,7 @@ if __name__ == '__main__':
                         help="judge filepath [fer, affectnet, combine]")
     parser.add_argument('--gpu_id', type=int, required=True,
                         help='which gpu to run')
+    parser.add_argument('--warmup_epoch', type=int, help='init warmup_epoch')
     parser.add_argument('--learning_rate', type=float, help='init learning rate')
     parser.add_argument('--drop_rate', type=float, help='dropout rate')
     parser.add_argument('--frozen_dense_blocks', type=int, default=0, help='keep num blocks to fix')
