@@ -23,7 +23,10 @@ class ChmedDataset(data.Dataset):
             text_data = np.load(join(ft_dir,  setname, "text_{}_ft.npy".format(opt.l_ft_type)), allow_pickle=True)
             self.exits_modality['text'] = text_data
 
-        if 'V' in opt.modality:
+        if 'V3d' in opt.modality:
+            visual_data = np.load(join(ft_dir,  setname, "visual_{}_ft.npy".format(opt.v_ft_type)), allow_pickle=True)
+            self.exits_modality['visual3d'] = visual_data
+        elif 'V' in opt.modality:
             visual_data = np.load(join(ft_dir,  setname, "visual_{}_ft.npy".format(opt.v_ft_type)), allow_pickle=True)
             self.exits_modality['visual'] = visual_data
 
@@ -48,7 +51,7 @@ class ChmedDataset(data.Dataset):
                     example['acoustic'] = example['acoustic'][:self.opt.max_acoustic_tokens]
                 else:
                     example['acoustic'] = torch.cat([example['acoustic'], \
-                            torch.zeros([self.opt.max_acoustic_tokens-len(example['acoustic']), self.opt.a_input_size])], dim=0)
+                            torch.zeros([self.opt.max_acoustic_tokens-len(example['acoustic'])] + list(example['visual'].shape[1:]))], dim=0)
 
         if 'visual' in self.exits_modality.keys():
             example['visual'] = torch.from_numpy(np.asarray(self.exits_modality['visual'][index], dtype=np.float32))
@@ -57,8 +60,17 @@ class ChmedDataset(data.Dataset):
                     example['visual'] = example['visual'][:self.opt.max_visual_tokens]
                 else:
                     example['visual'] = torch.cat([example['visual'], \
-                            torch.zeros([self.opt.max_visual_tokens-len(example['visual']), self.opt.v_input_size])], dim=0)
+                            torch.zeros([self.opt.max_visual_tokens-len(example['visual'])] + list(example['visual'].shape[1:]))], dim=0)
 
+        if 'visual3d' in self.exits_modality.keys():
+            example['visual3d'] = torch.from_numpy(np.asarray(self.exits_modality['visual3d'][index], dtype=np.float32))
+            if len(example['visual3d']) >= self.opt.max_visual_tokens:
+                example['visual3d'] = example['visual3d'][:self.opt.max_visual_tokens]
+            else:
+                example['visual3d'] = torch.cat([example['visual3d'], \
+                        torch.zeros([self.opt.max_visual_tokens-len(example['visual3d'])] + list(example['visual3d'].shape[1:]))], dim=0)
+            # print(example['visual3d'].shape)
+                        
         if 'text' in self.exits_modality.keys():
             example['text'] = torch.from_numpy(np.asarray(self.exits_modality['text'][index], dtype=np.float32))
             if len(example['text'].shape) > 1:
@@ -66,7 +78,7 @@ class ChmedDataset(data.Dataset):
                     example['text'] = example['text'][:self.opt.max_text_tokens]
                 else:
                     example['text'] = torch.cat([example['text'], \
-                            torch.zeros([self.opt.max_text_tokens-len(example['text']), self.opt.l_input_size])], dim=0)
+                            torch.zeros([self.opt.max_text_tokens-len(example['text'])] + list(example['text'].shape[1:]))], dim=0)
             
         label = torch.tensor(self.label[index])
         example['label'] = label
@@ -92,6 +104,11 @@ class ChmedDataset(data.Dataset):
             V = [sample['visual'] for sample in batches]
             V = pad_sequence(V, batch_first=True, padding_value=0)
             ret['visual'] = V
+        
+        if 'visual3d' in self.exits_modality.keys():
+            V = [sample['visual3d'] for sample in batches]
+            V = pad_sequence(V, batch_first=True, padding_value=0)
+            ret['visual3d'] = V
         
         label = [sample['label'] for sample in batches]
         label = torch.tensor(label)

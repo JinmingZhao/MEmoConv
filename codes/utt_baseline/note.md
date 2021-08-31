@@ -89,6 +89,10 @@ Loading best model found on val set: epoch-6
 2021-08-25 19:26:38,583 - 2021-08-25-19.17.54 - INFO - [Val] result WA: 0.4573 UAR 0.2671 F1 0.2640
 2021-08-25 19:26:40,717 - 2021-08-25-19.17.54 - INFO - [Tst] result WA: 0.4268 UAR 0.2503 F1 0.2368
 
+## V-LipResnet3D(from pretrianed lip reading) -- 不work
+
+## V-LipResnet3D(trained on cmed)
+
 ## V-sent_avg_DenseFace
 Loading best model found on val set: epoch-8
 [Val] result WA: 0.4559 UAR 0.2424 F1 0.2279

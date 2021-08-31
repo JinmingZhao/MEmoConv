@@ -19,6 +19,7 @@ class DensefaceExtractor():
             cfg = model_cfg
         if model_path is None:
             model_path = "/data7/emobert/exp/face_model/densenet100_adam0.001_0.0/ckpts/model_step_43.pt"
+        print('Resorting from {}'.format(model_path))
         self.device = torch.device("cuda:{}".format(gpu_id))
         self.extractor = DenseNet(gpu_id, **cfg)
         self.extractor.to(self.device)
@@ -399,8 +400,8 @@ def get_sentence_level_ft(sent_type, output_ft_filepath, feat_dim):
 
 if __name__ == '__main__':
     # export PYTHONPATH=/data9/MEmoConv
-    # CUDA_VISIBLE_DEVICES=2 python extract_visual_ft.py  
-    feat_type = 'rawimg4resnet3d'
+    # CUDA_VISIBLE_DEVICES=4 python extract_visual_ft.py  
+    feat_type = 'affectdenseface'
     all_output_ft_filepath = '/data9/memoconv/modality_fts/visual/all_visual_ft_{}.pkl'.format(feat_type)
     all_text_info_filepath = '/data9/memoconv/modality_fts/visual/all_visual_path_info.pkl'
     movies_names = read_file('../preprocess/movie_list_total.txt')
@@ -419,6 +420,11 @@ if __name__ == '__main__':
         print('Using denseface extactor')
         mean, std = 89.936089, 45.954746
         extractor = DensefaceExtractor(mean=mean, std=std)
+    if feat_type == 'affectdenseface':
+        print('Using affectdenseface extactor')
+        mean, std = 89.936089, 45.954746
+        model_path = '/data9/datasets/AffectNetDataset/combine_with_fer/results/densenet100_adam0.0002_0.0/ckpts/model_step_12.pt'
+        extractor = DensefaceExtractor(model_path=model_path, mean=mean, std=std)
     elif feat_type == 'lipresnet3d':
         mean, std = None, None
         extractor = LipReadingExtractor()
@@ -432,7 +438,7 @@ if __name__ == '__main__':
 
     if True:
         # # extract all faces, only in the utterance
-        for movie_name in movies_names[30:]:
+        for movie_name in movies_names[40:]:
             print(f'Current movie {movie_name}')
             output_ft_filepath = '/data9/memoconv/modality_fts/visual/movies/{}_visual_ft_{}.pkl'.format(movie_name, feat_type)
             text_info_filepath = '/data9/memoconv/modality_fts/visual/movies/{}_visualpath_info.pkl'.format(movie_name)

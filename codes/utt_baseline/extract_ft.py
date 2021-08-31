@@ -274,7 +274,6 @@ if __name__ == '__main__':
     parser.add_argument('--max_text_tokens', type=int, default=20)
     parser.add_argument('--max_acoustic_tokens', type=int, default=128)
     parser.add_argument('--max_visual_tokens', type=int, default=64)
-    parser.add_argument('--v3d_embd_method', type=str, default='last')
 
     parser.add_argument('--postfix', required=True, default='None',
                         help='postfix for the output dir')
