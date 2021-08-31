@@ -88,10 +88,15 @@ Loading best model found on val set: epoch-6
 2021-08-25 19:26:37,008 - 2021-08-25-19.17.54 - INFO - Loading best model found on val set: epoch-17
 2021-08-25 19:26:38,583 - 2021-08-25-19.17.54 - INFO - [Val] result WA: 0.4573 UAR 0.2671 F1 0.2640
 2021-08-25 19:26:40,717 - 2021-08-25-19.17.54 - INFO - [Tst] result WA: 0.4268 UAR 0.2503 F1 0.2368
+## V-AffectDenseFace(2e-5)
+Loading best model found on val set: epoch-19
+[Warning] error msg []
+[Val] result WA: 0.4764 UAR 0.2763 F1 0.2747
+[Tst] result WA: 0.4506 UAR 0.2505 F1 0.2431
 
 ## V-LipResnet3D(from pretrianed lip reading) -- 不work
 
-## V-LipResnet3D(trained on cmed)
+## V-LipResnet3D(trained on cmed) -- 重新在Cap上训练，leo太慢了
 
 ## V-sent_avg_DenseFace
 Loading best model found on val set: epoch-8

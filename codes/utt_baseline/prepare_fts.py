@@ -217,12 +217,12 @@ if __name__ == '__main__':
             np.save(output_label_filepath, int2label)
             np.save(output_int2name_filepath, int2name)
     
-    if True:
+    if False:
         # Step2: 根据 int2name 获取对应的不同模态的特征, 注意统计长度，方便设计模型
         modality = 'visual' # text, speech, visual
         # 'bert_base_chinese'(768), 'robert_base_wwm_chinese'(768),, 'wav2vec_zh'(1024), 'comparE'(130) 'IS10'(1582) 'denseface'(342), 'lipresnet3d'(342)
-        feature_type = 'rawimg4resnet3d'
-        feature_dim = 112
+        feature_type = 'affectdenseface'
+        feature_dim = 342
         modality_ft_dir = os.path.join('/data9/memoconv/modality_fts/', modality, 'movies')
         for setname in ['train', 'val', 'test']:
             print('current setname {}'.format(setname))
