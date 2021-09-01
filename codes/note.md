@@ -25,6 +25,7 @@ train utts 17427 val utts 2821  test utts 4201
 Bert + text + Finetune
 wav2vec-zh + speech + Finetune
 七分类的结果都在F1=30%, WA=50%左右
+
 ### Baseline1: 多个encoder --Done
 根据模型要求的数据格式，划分数据集并准备对应的数据
 注意的是有一句的spk错误，所以遇到 B_jimaofeishangtian_13_6 的时候，如果key不存在，那么改为读取 A_jimaofeishangtian_13_6 的值。
@@ -36,31 +37,7 @@ wav2vec-zh + speech + Finetune
     max_acoustic_tokens = 128 (wav2vec) 256(comparE)
     max_visual_tokens = 64
 
-### Baseline2: MulT --DDL 0825 --
-
 ### 对话中的情感 
-先把特征都平均得到句子级别的特征，然后跑一下，dialogRNN 试试
-
-text:
-    sent_cls_bert_base_chinese
-    sent_cls_bert_base_chinese4chmed
-    sent_cls_robert_wwm_base_chinese4chmed
-speech:
-    IS10_norm 
-    sent_avg_wav2vec_zh
-    wav2vec_zh4chmed --Pending, 需要进行模型转换
-visual:
-    sent_avg_denseface
-    
-
-features 4 dialogRNN/DialogueGCN:
-    /data9/memoconv/modality_fts/dialogrnn/Asent_avg_wav2vec_zh_Vsent_avg_denseface_Lsent_cls_bert_base_chinese.pkl
-    /data9/memoconv/modality_fts/dialogrnn/AIS10_norm_Vsent_avg_denseface_Lsent_cls_robert_wwm_base_chinese4chmed.pkl
-result_dir
-    /data9/MEmoConv/memoconv/results/dialogrnn
-    /data9/MEmoConv/memoconv/results/dialoggcn
-
-
 对话情感识别，需要首先获取句子级别的情感表示
 https://github.com/declare-lab/conv-emotion
 DialogRNN 数据格式要求:
@@ -95,3 +72,39 @@ valVid
     video_names = data[8] # 序列存储属于验证集合的 videoIDs
 testVid
     video_names = data[8] # 序列存储属于测试集合的 videoIDs
+
+### 对话中的情感 --环境
+torch=1.0 所以需要用vlbert这个环境，而不能用 talknet torch=1.9的环境
+
+### 对话中的情感 --特征
+先把特征都平均得到句子级别的特征，然后跑一下，dialogRNN 试试
+text:
+    sent_cls_bert_base_chinese
+    sent_cls_bert_base_chinese4chmed
+    sent_cls_robert_wwm_base_chinese4chmed
+speech:
+    IS10_norm 
+    sent_avg_wav2vec_zh
+    sent_last_wav2vec_zh4chmedlast
+visual:
+    sent_avg_denseface
+    sent_avg_affectdenseface
+    
+
+features 4 dialogRNN/DialogueGCN:
+    /data9/memoconv/modality_fts/dialogrnn/Asent_avg_wav2vec_zh_Vsent_avg_denseface_Lsent_cls_bert_base_chinese.pkl
+    /data9/memoconv/modality_fts/dialogrnn/AIS10_norm_Vsent_avg_denseface_Lsent_cls_robert_wwm_base_chinese4chmed.pkl
+result_dir
+    /data9/MEmoConv/memoconv/results/dialogrnn
+    /data9/MEmoConv/memoconv/results/dialoggcn
+
+### 对话中的情感 --模型
+
+
+
+
+
+
+
+
+

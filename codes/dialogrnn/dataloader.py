@@ -6,11 +6,11 @@ import pickle
 import pandas as pd
 
 class CHMEDDataset(Dataset):
-    def __init__(self, root_dir, path, train='train'):
+    def __init__(self, root_dir, path, train='train', max_text_tokens=20, max_visual_tokens=70, max_audio_tokens=256):
         ft_filepath = os.path.join(root_dir, '{}.pkl'.format(path))
         self.videoIDs, self.videoSpeakers, self.videoLabels, self.videoText,\
         self.videoAudio, self.videoVisual, self.videoSentence, self.trainVid,\
-        self.validVid, self.testVid = pickle.load(open(ft_filepath, 'rb'), encoding='latin1')
+        self.validVid, self.testVid = pickle.load(open(ft_filepath, 'rb'))
         '''
         {'Happy':0, 'Neutral':1, 'Sad':2, 'Disgust':3, 'Anger': 4, 'Fear': 5, 'Surprise':6}
         '''
@@ -21,25 +21,40 @@ class CHMEDDataset(Dataset):
         else:
             self.keys = self.testVid
         self.len = len(self.keys)
+        self.max_text_tokens = max_text_tokens
+        self.max_visual_tokens = max_visual_tokens
+        self.max_audio_tokens = max_audio_tokens
 
     def __getitem__(self, index):
         vid = self.keys[index]
-        return torch.FloatTensor(self.videoText[vid]),\
-               torch.FloatTensor(self.videoVisual[vid]),\
-               torch.FloatTensor(self.videoAudio[vid]),\
-               torch.FloatTensor([[1,0] if x=='A' else [0,1] for x in\
-                                  self.videoSpeakers[vid]]),\
-               torch.FloatTensor([1]*len(self.videoLabels[vid])),\
-               torch.LongTensor(self.videoLabels[vid]),\
-               vid
+        vid_text_ft = torch.FloatTensor(self.videoText[vid][:self.max_text_tokens])
+        vid_visual_ft = torch.FloatTensor(self.videoVisual[vid][:self.max_visual_tokens])
+        vid_audio_ft = torch.FloatTensor(self.videoAudio[vid][:self.max_audio_tokens])
+        vid_spk_embs = torch.FloatTensor([[1,0] if x=='A' else [0,1] for x in\
+                                  self.videoSpeakers[vid]])
+        vid_len_mask = torch.FloatTensor([1]*len(self.videoLabels[vid]))
+        vid_labels = torch.LongTensor(self.videoLabels[vid])
+        return vid_text_ft, vid_visual_ft, vid_audio_ft, vid_spk_embs, vid_len_mask, vid_labels, vid
 
     def __len__(self):
         return self.len
 
     def collate_fn(self, data):
-        dat = pd.DataFrame(data)
-        return [pad_sequence(dat[i]) if i<4 else pad_sequence(dat[i], True) if i<6 else dat[i].tolist() for i in dat]
-
+        # batchdata, and each data contains
+        batch_feats = []
+        for col in range(len(data[0])):
+            if col < 4:
+                # text, visual, audio, spk return (seq-len, batch-size, dim)
+                batch_modality_ft = [example[col] for example in data]
+                pad_fts = pad_sequence(batch_modality_ft, batch_first=False)
+            else:
+                if col < 6:
+                    batch_info = [example[col] for example in data]
+                    pad_fts = pad_sequence(batch_info, batch_first=True)
+                else:
+                    pad_fts = [example[col] for example in data]
+            batch_feats.append(pad_fts)
+        return batch_feats
 
 class IEMOCAPDataset(Dataset):
 

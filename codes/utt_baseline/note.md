@@ -7,9 +7,6 @@
 2021-08-27 09:18:03,663 - 2021-08-27-09.16.12 - INFO - [Val] result WA: 0.4218 UAR 0.2276 F1 0.2262
 2021-08-27 09:18:03,902 - 2021-08-27-09.16.12 - INFO - [Tst] result WA: 0.4535 UAR 0.2398 F1 0.2429
 
-## A-IS10_norm(512)
-
-
 # A_lr0.001_dp0.5_bnFalse_AIS10_norm256_Vdenseface256_Lbert_base_chinese256_F256,128_run1_self
 2021-08-27 09:18:03,477 - 2021-08-27-09.16.12 - INFO - Loading best model found on val set: epoch-38
 2021-08-27 09:18:03,663 - 2021-08-27-09.16.12 - INFO - [Val] result WA: 0.4218 UAR 0.2276 F1 0.2262
