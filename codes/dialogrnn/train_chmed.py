@@ -56,27 +56,24 @@ def train_or_eval_model(model, loss_function, dataloader, optimizer=None, train=
     for data in dataloader:
         if train:
             optimizer.zero_grad()
-        # import ipdb;ipdb.set_trace()
         textf, visuf, acouf, qmask, umask, label =\
                 [d.cuda() for d in data[:-1]] if is_cuda else data[:-1]
-        if args.modals=='AVL':
-            textf = torch.cat((textf,acouf,visuf),dim=-1)
-        elif args.modals=='AL':
-            textf = torch.cat((textf,acouf),dim=-1)
-        elif args.modals=="AV":
-            textf = torch.cat((acouf,visuf),dim=-1)
-        elif args.modals=="VL":
-            textf = torch.cat((textf,visuf),dim=-1)
-        elif args.modals == 'A':
-            textf = acouf
-        elif args.modals =='V':
-            textf = visuf
-        elif args.modals=="L":
-            textf = textf
-        else:
-            logger.info("error")
-        #log_prob = model(torch.cat((textf,acouf,visuf),dim=-1), qmask,umask,att2=True) # seq_len, batch, n_classes
-        log_prob, alpha, alpha_f, alpha_b = model(textf, qmask,umask,att2=True) # seq_len, batch, n_classes
+        # torch.Size([33, 32, 768]) torch.Size([33, 32, 342]) torch.Size([33, 32, 1582])
+        # print(textf.shape,visuf.shape,acouf.shape)
+        fusion_fts = None
+        if 'L' in args.modals:
+            fusion_fts = textf
+        if 'A' in args.modals:
+            if fusion_fts is None:
+                fusion_fts = acouf
+            else:
+                fusion_fts = torch.cat((fusion_fts,acouf),dim=-1)
+        if 'V' in args.modals:
+            if fusion_fts is None:
+                fusion_fts = visuf
+            else:
+                fusion_fts = torch.cat((fusion_fts,visuf),dim=-1)
+        log_prob, alpha, alpha_f, alpha_b = model(fusion_fts, qmask, umask, att2=True) # seq_len, batch, n_classes
         lp_ = log_prob.transpose(0,1).contiguous().view(-1,log_prob.size()[2]) # batch*seq_len, n_classes
         labels_ = label.view(-1) # batch*seq_len
         loss = loss_function(lp_, labels_, umask)
@@ -168,9 +165,9 @@ if __name__ == '__main__':
     parser.add_argument('--ft_dir', default='/data9/memoconv/modality_fts/dialogrnn', help='modals to fusion')
     parser.add_argument('--result_dir', default='/data9/memoconv/results/dialogrnn', help='modals to fusion')
     args = parser.parse_args()
-    today = datetime.datetime.now()
-    output_name_ = 'DialogueRNN_' + 'G{}P{}E{}H{}A{}_'.format(args.global_dim, args.person_dim, args.emotion_dim, args.classifer_dim, args.attention_dim) \
-            + args.modals+'_'+args.path
+
+    output_name_ = 'Dlgrnn_' + 'G{}P{}E{}H{}A{}_dp{}_lr{}_'.format(args.global_dim, args.person_dim, args.emotion_dim, \
+                args.classifer_dim, args.attention_dim, args.dropout, args.lr) + args.modals+'_'+args.path
     if args.class_weight:
         output_name_ += '_class_weight'
     output_name_ += '_run' + str(args.run_idx)
