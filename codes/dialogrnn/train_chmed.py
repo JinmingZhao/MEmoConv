@@ -131,7 +131,7 @@ def get_modality_dims(ft_names_str, ftname2dim, modalites, logger):
             D_dims.append(ft_dim)
             modality2dim[cur_modality] = ft_dim
     logger.info('modalitie dim {}'.format(D_dims))
-    logger.info()
+    logger.info(modality2dim)
     return sum(D_dims), modality2dim
 
 
