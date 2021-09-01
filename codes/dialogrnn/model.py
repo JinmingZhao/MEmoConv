@@ -190,6 +190,7 @@ class DialogueRNN(nn.Module):
                 alpha.append(alpha_[:,0,:])
 
         return e,alpha # seq_len, batch, D_e
+        
 class BiModel(nn.Module):
     '''
     D_m: multi-modalities fusion dim -- 2000左右

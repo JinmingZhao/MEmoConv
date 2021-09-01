@@ -21,9 +21,6 @@ class CHMEDDataset(Dataset):
         else:
             self.keys = self.testVid
         self.len = len(self.keys)
-        self.max_text_tokens = max_text_tokens
-        self.max_visual_tokens = max_visual_tokens
-        self.max_audio_tokens = max_audio_tokens
 
     def __getitem__(self, index):
         vid = self.keys[index]

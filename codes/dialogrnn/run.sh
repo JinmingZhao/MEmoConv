@@ -10,7 +10,7 @@ do
         --max_epoch 80 --patience 20 --fix_lr_epoch 30 --warmup_epoch 5
         --dropout 0.1 --rec_dropout 0.1 --lr 5e-4  --l2 0.00001 --batch_size 32
         --use_input_project
-        --global_dim 256 --person_dim 256 --emotion_dim 128 --classifer_dim 128 --attention_dim 128
+        --global_dim 512 --person_dim 512 --emotion_dim 128 --classifer_dim 128 --attention_dim 128
     "
     echo "\n-------------------------------------------------------------------------------------"
     echo "Execute command: $cmd"
