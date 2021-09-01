@@ -120,16 +120,19 @@ def lambda_rule(epoch):
         lr_l = 1.0 - max(0, epoch + 1 - niter) / float(niter_decay + 1)
         return lr_l
 
-def get_modality_dims(ft_names_str, ftname2dim, modalites):
+def get_modality_dims(ft_names_str, ftname2dim, modalites, logger):
     D_dims = []
+    modality2dim = {}
     modality_ftnames = ft_names_str.split('-')
     for ftname in modality_ftnames:
         ft_dim =  ftname2dim[ftname]
         cur_modality = ftname[0]
         if cur_modality in modalites:
             D_dims.append(ft_dim)
+            modality2dim[cur_modality] = ft_dim
     logger.info('modalitie dim {}'.format(D_dims))
-    return sum(D_dims)
+    logger.info()
+    return sum(D_dims), modality2dim
 
 
 if __name__ == '__main__':
@@ -188,7 +191,7 @@ if __name__ == '__main__':
 
     is_cuda = torch.cuda.is_available()
     logger.info('[Cuda] {}'.format(is_cuda))
-    fusion_dim = get_modality_dims(args.path, ftname2dim, args.modals)
+    fusion_dim, modality2dim = get_modality_dims(args.path, ftname2dim, args.modals, logger)
     D_g, D_p, D_e, D_h, D_a = args.global_dim, args.person_dim, args.emotion_dim, args.classifer_dim, args.attention_dim
     model = BiModel(fusion_dim, D_g, D_p, D_e, D_h,
                     n_classes=args.n_classes,
@@ -212,9 +215,6 @@ if __name__ == '__main__':
     best_eval_f1 = 0              # record the best eval f1
     best_eval_epoch = -1           # record the best eval epoch
     patience = args.patience
-    best_fscore = None
-    all_fscore, all_acc, all_loss = [], [], [] #用来记录每个epoch的fscore, acc, loss
-    best_test_fscore, best_test_recall, best_test_precision = None, None, None
 
     for epoch in range(args.max_epoch):
         start_time = time.time()
