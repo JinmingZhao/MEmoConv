@@ -809,18 +809,17 @@ class GraphNetwork(torch.nn.Module):
         log_prob = classify_node_features(emotions, seq_lengths, umask, self.matchatt, self.linear, self.dropout, self.smax_fc, nodal_attn, avec, self.no_cuda)
         return log_prob
 
-
-
 class DialogueGCNModel(nn.Module):
 
     def __init__(self, base_model, D_m, D_g, D_p, D_e, D_h, D_a, graph_hidden_size, n_speakers, max_seq_len, window_past, window_future,
-                 n_classes=7, listener_state=False, context_attention='simple', dropout_rec=0.5, dropout=0.5, nodal_attention=True, avec=False, no_cuda=False):
+                 n_classes=7, listener_state=False, context_attention='simple', dropout_rec=0.5, dropout=0.5, 
+                 nodal_attention=True, no_cuda=False, use_input_project=False):
         
         super(DialogueGCNModel, self).__init__()
 
         self.base_model = base_model
-        self.avec = avec
         self.no_cuda = no_cuda
+        self.use_input_project = use_input_project
 
         # The base model is the sequential context encoder.
         if self.base_model == 'DialogRNN':
@@ -840,6 +839,11 @@ class DialogueGCNModel(nn.Module):
         else:
             print ('Base model must be one of DialogRNN/LSTM/GRU')
             raise NotImplementedError 
+        
+        if self.use_input_project:
+            print('Using use_input_project from {} to {}'.format(D_m, D_g))
+            self.project = nn.Linear(D_m, D_g)
+            D_m = D_g
 
         n_relations = 2 * n_speakers ** 2
         self.window_past = window_past
@@ -847,7 +851,6 @@ class DialogueGCNModel(nn.Module):
 
         self.att_model = MaskedEdgeAttention(2*D_e, max_seq_len, self.no_cuda)
         self.nodal_attention = nodal_attention
-
         self.graph_net = GraphNetwork(2*D_e, n_classes, n_relations, max_seq_len, graph_hidden_size, dropout, self.no_cuda)
 
         edge_type_mapping = {}
@@ -880,18 +883,17 @@ class DialogueGCNModel(nn.Module):
         U -> seq_len, batch, D_m
         qmask -> seq_len, batch, party
         """
+        # 先过一层映射进行将维
+        if self.use_input_project:
+            U = self.project(U)
+
         if self.base_model == "DialogRNN":
-
-            if self.avec:
-                emotions, _ = self.dialog_rnn_f(U, qmask)
-
-            else:
-                emotions_f, alpha_f = self.dialog_rnn_f(U, qmask) # seq_len, batch, D_e
-                rev_U = self._reverse_seq(U, umask)
-                rev_qmask = self._reverse_seq(qmask, umask)
-                emotions_b, alpha_b = self.dialog_rnn_r(rev_U, rev_qmask)
-                emotions_b = self._reverse_seq(emotions_b, umask)
-                emotions = torch.cat([emotions_f,emotions_b],dim=-1)
+            emotions_f, alpha_f = self.dialog_rnn_f(U, qmask) # seq_len, batch, D_e
+            rev_U = self._reverse_seq(U, umask)
+            rev_qmask = self._reverse_seq(qmask, umask)
+            emotions_b, alpha_b = self.dialog_rnn_r(rev_U, rev_qmask)
+            emotions_b = self._reverse_seq(emotions_b, umask)
+            emotions = torch.cat([emotions_f,emotions_b],dim=-1)
 
         elif self.base_model == 'LSTM':
             emotions, hidden = self.lstm(U)

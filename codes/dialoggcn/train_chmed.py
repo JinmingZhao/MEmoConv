@@ -101,22 +101,13 @@ def train_or_eval_graph_model(model, loss_function, dataloader, optimizer=None, 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--base-model', default='LSTM', help='base recurrent model, must be one of DialogRNN/LSTM/GRU')
-    parser.add_argument('--graph-model', action='store_true', default=False, help='whether to use graph model after recurrent encoding')
-    parser.add_argument('--nodal-attention', action='store_true', default=False, help='whether to use nodal attention in graph model: Equation 4,5,6 in Paper')
+    parser.add_argument('--base_model', default='LSTM', help='base recurrent model, must be one of DialogRNN/LSTM/GRU')
+    parser.add_argument('--graph_model', action='store_true', default=False, help='whether to use graph model after recurrent encoding')
+    parser.add_argument('--nodal_attention', action='store_true', default=False, help='whether to use nodal attention in graph model: Equation 4,5,6 in Paper')
     parser.add_argument('--windowp', type=int, default=10, help='context window size for constructing edges in graph model for past utterances')
     parser.add_argument('--windowf', type=int, default=10, help='context window size for constructing edges in graph model for future utterances')
-    parser.add_argument('--graph_type', default='relation', help='relation/GAT/GCN3/DeepGCN/MMGCN/MMGCN2')
-    parser.add_argument('--use_topic', action='store_true', default=False, help='whether to use topic information')
     parser.add_argument('--alpha', type=float, default=0.2, help='alpha')
     parser.add_argument('--multiheads', type=int, default=6, help='multiheads')
-    parser.add_argument('--graph_construct', default='full', help='single/window/fc for MMGCN2; direct/full for others')
-    parser.add_argument('--use_gcn', action='store_true', default=False, help='whether to combine spectral and none-spectral methods or not')
-    parser.add_argument('--use_residue', action='store_true', default=True, help='whether to use residue information or not')
-    parser.add_argument('--dynamic_edge_w', action='store_true', default=False, help='whether to use dynamic edge weight for GAT or not')
-    parser.add_argument('--multi_modal', action='store_true', default=False, help='whether to use multimodal information')
-    parser.add_argument('--mm_fusion_mthd', default='concat', help='method to use multimodal information: concat, gated, concat_subsequently')
-    parser.add_argument('--av_using_lstm', action='store_true', help='use frame-level audio or visual or not')
 
     parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
                         help='learning rate')
@@ -147,12 +138,12 @@ if __name__ == '__main__':
     parser.add_argument('--class_weight', action='store_true', default=False)
     parser.add_argument('--modals', default='AVL', help='modals to fusion')
     parser.add_argument('--path', default='AIS10_norm_Vsent_avg_denseface_Lsent_cls_robert_wwm_base_chinese4chmed', help='modals to fusion')
-    parser.add_argument('--ft_dir', default='/data9/memoconv/modality_fts/dialogrnn', help='modals to fusion')
-    parser.add_argument('--result_dir', default='/data9/memoconv/results/dialogrnn', help='modals to fusion')
+    parser.add_argument('--ft_dir', default='/data9/memoconv/modality_fts/dialogrnn')
+    parser.add_argument('--result_dir', default='/data9/memoconv/results/dialoggcn')
     args = parser.parse_args()
 
-    output_name_ =  'Dlggcn_' + args.modals + 'G{}P{}E{}H{}A{}_dp{}_lr{}_'.format(args.global_dim, args.person_dim, args.emotion_dim, \
-                args.classifer_dim, args.attention_dim, args.dropout, args.lr) + '_'+args.path
+    output_name_ =  'Dlggcn_' + args.modals + 'Base{}E{}WP{}WF{}dp{}_lr{}_'.format(args.base_model, args.emotion_dim, args.windowp, \
+                    args.windowf, args.dropout, args.lr) + '_'+args.path
     if args.class_weight:
         output_name_ += '_class_weight'
     if args.use_input_project:
@@ -174,11 +165,14 @@ if __name__ == '__main__':
     logger.info('[Cuda] {}'.format(is_cuda))
     fusion_dim, modality2dim = get_modality_dims(args.path, ftname2dim, args.modals, logger)
     D_g, D_p, D_e, D_h, D_a = args.global_dim, args.person_dim, args.emotion_dim, args.classifer_dim, args.attention_dim
-    graph_h = D_h
+    graph_h = D_e
+    if args.base_model != 'DialogRNN':
+        graph_h = D_e
+    #注意的是这里虽然传了很多参数进去，如果不用dialogrnn作为basemodel话，那么De和graph_h是分别作为lstm和graph的隐含层
     model = DialogueGCNModel(args.base_model,
                                  fusion_dim, D_g, D_p, D_e, D_h, D_a, graph_h,
                                  n_speakers=2,
-                                 max_seq_len=200,
+                                 max_seq_len=110,
                                  window_past=args.windowp,
                                  window_future=args.windowf,
                                  n_classes=args.n_classes,
@@ -187,23 +181,7 @@ if __name__ == '__main__':
                                  dropout=args.dropout,
                                  nodal_attention=args.nodal_attention,
                                  no_cuda=args.no_cuda,
-                                 graph_type=args.graph_type,
-                                 use_topic=args.use_topic,
-                                 alpha=args.alpha,
-                                 multiheads=args.multiheads,
-                                 graph_construct=args.graph_construct,
-                                 use_GCN=args.use_gcn,
-                                 use_residue=args.use_residue,
-                                 dynamic_edge_w=args.dynamic_edge_w,
-                                 D_m_v = modality2dim['V'],
-                                 D_m_a = modality2dim['A'],
-                                 modals=args.modals,
-                                 att_type=args.mm_fusion_mthd,
-                                 av_using_lstm=args.av_using_lstm,
-                                 Deep_GCN_nlayers=args.Deep_GCN_nlayers,
-                                 dataset=args.Dataset,
-                                 use_speaker=args.use_speaker,
-                                 use_modal=args.use_modal)
+                                 use_input_project=args.use_input_project)
     logger.info('Graph NN with', args.base_model, 'as base model.')
     name = 'Graph'
     model.cuda()
