@@ -167,8 +167,8 @@ if __name__ == '__main__':
     parser.add_argument('--result_dir', default='/data9/memoconv/results/dialogrnn', help='modals to fusion')
     args = parser.parse_args()
 
-    output_name_ = 'Dlgrnn_' + 'G{}P{}E{}H{}A{}_dp{}_lr{}_'.format(args.global_dim, args.person_dim, args.emotion_dim, \
-                args.classifer_dim, args.attention_dim, args.dropout, args.lr) + args.modals+'_'+args.path
+    output_name_ =  'Dlgrnn_' + args.modals + 'G{}P{}E{}H{}A{}_dp{}_lr{}_'.format(args.global_dim, args.person_dim, args.emotion_dim, \
+                args.classifer_dim, args.attention_dim, args.dropout, args.lr) + '_'+args.path
     if args.class_weight:
         output_name_ += '_class_weight'
     if args.use_input_project:
