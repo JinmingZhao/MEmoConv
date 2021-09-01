@@ -266,7 +266,6 @@ class BiModel(nn.Module):
             hidden = F.relu(self.linear(att_emotions))
         else:
             hidden = F.relu(self.linear(emotions))
-        #hidden = F.relu(self.linear(emotions))
         hidden = self.dropout(hidden)
         log_prob = F.log_softmax(self.smax_fc(hidden), 2) # seq_len, batch, n_classes
         if att2:
