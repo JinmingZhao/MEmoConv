@@ -24,7 +24,6 @@ Loading best model found on val set: epoch-21
 2021-09-01 03:08:21,493 - 2021-09-01-02.54.14 - INFO - [Val] result WA: 0.4100 UAR 0.2800 F1 0.2700
 2021-09-01 03:08:23,924 - 2021-09-01-02.54.14 - INFO - [Tst] result WA: 0.3800 UAR 0.2700 F1 0.2500
 
-
 # set  Dlgrnn_G512P512E128H128A128_dp0.1_lr0.0005_A_AIS10_norm-Vsent_avg_denseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_run1
 2021-09-01 02:16:57,541 - 2021-09-01-01.58.27 - INFO - Loading best model found on val set: epoch-26
 2021-09-01 02:16:59,020 - 2021-09-01-01.58.27 - INFO - [Val] result WA: 0.4200 UAR 0.2900 F1 0.2700
