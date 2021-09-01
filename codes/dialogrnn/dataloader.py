@@ -6,7 +6,7 @@ import pickle
 import pandas as pd
 
 class CHMEDDataset(Dataset):
-    def __init__(self, root_dir, path, train='train', max_text_tokens=20, max_visual_tokens=70, max_audio_tokens=256):
+    def __init__(self, root_dir, path, train='train'):
         ft_filepath = os.path.join(root_dir, '{}.pkl'.format(path))
         self.videoIDs, self.videoSpeakers, self.videoLabels, self.videoText,\
         self.videoAudio, self.videoVisual, self.videoSentence, self.trainVid,\
@@ -27,9 +27,9 @@ class CHMEDDataset(Dataset):
 
     def __getitem__(self, index):
         vid = self.keys[index]
-        vid_text_ft = torch.FloatTensor(self.videoText[vid][:self.max_text_tokens])
-        vid_visual_ft = torch.FloatTensor(self.videoVisual[vid][:self.max_visual_tokens])
-        vid_audio_ft = torch.FloatTensor(self.videoAudio[vid][:self.max_audio_tokens])
+        vid_text_ft = torch.FloatTensor(self.videoText[vid])
+        vid_visual_ft = torch.FloatTensor(self.videoVisual[vid])
+        vid_audio_ft = torch.FloatTensor(self.videoAudio[vid])
         vid_spk_embs = torch.FloatTensor([[1,0] if x=='A' else [0,1] for x in\
                                   self.videoSpeakers[vid]])
         vid_len_mask = torch.FloatTensor([1]*len(self.videoLabels[vid]))
