@@ -199,7 +199,7 @@ class BiModel(nn.Module):
     D_h: classification linear --100
     '''
     def __init__(self, D_m, D_g, D_p, D_e, D_h,
-                 n_classes=7, listener_state=False, context_attention='simple', D_a=100, dropout_rec=0.5, dropout=0.5):
+                 n_classes=7, listener_state=False, context_attention='simple', D_a=100, dropout_rec=0.5, dropout=0.5, use_input_project=False):
         super(BiModel, self).__init__()
 
         self.D_m       = D_m
@@ -210,6 +210,11 @@ class BiModel(nn.Module):
         self.n_classes = n_classes
         self.dropout   = nn.Dropout(dropout)
         self.dropout_rec = nn.Dropout(dropout+0.15)
+        self.use_input_project = use_input_project
+        if self.use_input_project:
+            print('Using use_input_project from {} to {}'.format(D_m, D_g))
+            self.project = nn.Linear(D_m, D_g)
+            D_m = D_g
         self.dialog_rnn_f = DialogueRNN(D_m, D_g, D_p, D_e,listener_state,
                                     context_attention, D_a, dropout_rec)
         self.dialog_rnn_r = DialogueRNN(D_m, D_g, D_p, D_e,listener_state,
@@ -239,6 +244,8 @@ class BiModel(nn.Module):
         U -> seq_len, batch, D_m
         qmask -> seq_len, batch, party
         """
+        if self.use_input_project:
+            U = self.project(U)
         emotions_f, alpha_f = self.dialog_rnn_f(U, qmask) # seq_len, batch, D_e
         emotions_f = self.dropout_rec(emotions_f)
         rev_U = self._reverse_seq(U, umask)

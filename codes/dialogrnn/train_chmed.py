@@ -158,6 +158,7 @@ if __name__ == '__main__':
     parser.add_argument('--emotion_dim',type=int,  default=100, help='emotion rnn hidden size')
     parser.add_argument('--classifer_dim', type=int, default=100, help='classifer fc hidden size')
     parser.add_argument('--attention_dim',  type=int, default=100, help='Attention hidden size')
+    parser.add_argument('--use_input_project', action='store_true', default=False)
     parser.add_argument('--active_listener', action='store_true', default=False)
     parser.add_argument('--class_weight', action='store_true', default=False)
     parser.add_argument('--modals', default='AVL', help='modals to fusion')
@@ -170,6 +171,8 @@ if __name__ == '__main__':
                 args.classifer_dim, args.attention_dim, args.dropout, args.lr) + args.modals+'_'+args.path
     if args.class_weight:
         output_name_ += '_class_weight'
+    if args.use_input_project:
+        output_name_ += '_inputproj'
     output_name_ += '_run' + str(args.run_idx)
 
     output_dir = os.path.join(args.result_dir, output_name_)
@@ -192,7 +195,8 @@ if __name__ == '__main__':
                     listener_state=args.active_listener,
                     context_attention=args.attention,
                     dropout_rec=args.rec_dropout,
-                    dropout=args.dropout)
+                    dropout=args.dropout,
+                    use_input_project=args.use_input_project)
     model.cuda()
     # 计算训练集合中各个类别所占的比例
     loss_weights = torch.FloatTensor([1/0.093303,  1/0.409135, 1/0.156883, 1/0.065703, 1/0.218971, 1/0.016067, 1/0.039938])
