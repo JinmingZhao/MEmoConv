@@ -4,15 +4,31 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
-from model import MaskedNLLLoss, LSTMModel, GRUModel, DialogRNNModel, DialogueGCNModel
 from sklearn.metrics import f1_score, confusion_matrix, accuracy_score, classification_report, recall_score
 from sklearn.metrics import mean_absolute_error
 from scipy.stats import pearsonr
+from codes.dialoggcn.model import MaskedNLLLoss, LSTMModel, GRUModel, DialogRNNModel, DialogueGCNModel
 from codes.utt_baseline.utils.logger import get_logger
 from codes.utt_baseline.run_baseline import make_path, clean_chekpoints
 from codes.utt_baseline.utils.save import ModelSaver
-from codes.dialogrnn.train_chmed import get_chmed_loaders, lambda_rule, get_modality_dims
+from codes.dialogrnn.train_chmed import get_chmed_loaders, get_modality_dims
 from codes.dialogrnn.config import ftname2dim
+
+def lambda_rule(epoch):
+    '''
+    比较复杂的策略, 返回的是学习率的衰减系数，而不是当前学习率
+    在 warmup 阶段： 学习率保持很小的值，opt.learning_rate * opt.warmup_decay
+    在 warmup < epoch <fix_lr_epoch 阶段，给定原始的学习率先训练几轮，10轮左右，经验值
+    在 fix_lr_epoch < epoch 阶段，线性的进行学习率的降低
+    '''
+    if epoch < args.warmup_epoch:
+        return args.warmup_decay
+    else:
+        assert args.fix_lr_epoch < args.max_epoch
+        niter = args.fix_lr_epoch
+        niter_decay = args.max_epoch - args.fix_lr_epoch
+        lr_l = 1.0 - max(0, epoch + 1 - niter) / float(niter_decay + 1)
+        return lr_l
 
 def train_or_eval_graph_model(model, loss_function, dataloader, optimizer=None, train=False):
     """
@@ -50,20 +66,7 @@ def train_or_eval_graph_model(model, loss_function, dataloader, optimizer=None, 
             else:
                 fusion_fts = torch.cat((fusion_fts,visuf),dim=-1)
 
-        if args.multi_modal and args.mm_fusion_mthd=='gated':
-            log_prob, e_i, e_n, e_t, e_l = model(fusion_fts, qmask, umask, lengths, acouf, visuf)
-        elif args.multi_modal and args.mm_fusion_mthd=='concat_subsequently':
-            log_prob, e_i, e_n, e_t, e_l = model(fusion_fts, qmask, umask, lengths, acouf, visuf)
-        elif args.multi_modal and args.mm_fusion_mthd=='TFN':
-            log_prob, e_i, e_n, e_t, e_l = model(fusion_fts, qmask, umask, lengths, acouf, visuf)
-        elif args.multi_modal and args.mm_fusion_mthd=='MFN':
-            log_prob, e_i, e_n, e_t, e_l = model(fusion_fts, qmask, umask, lengths, acouf, visuf)
-        elif args.multi_modal and args.mm_fusion_mthd=='Transformer':
-            log_prob, e_i, e_n, e_t, e_l = model(fusion_fts, qmask, umask, lengths, acouf, visuf)
-        elif args.multi_modal and args.mm_fusion_mthd=='LMF':
-            log_prob, e_i, e_n, e_t, e_l = model(fusion_fts, qmask, umask, lengths, acouf, visuf)
-        else:
-            log_prob, e_i, e_n, e_t, e_l = model(fusion_fts, qmask, umask, lengths)
+        log_prob, e_i, e_n, e_t, e_l = model(fusion_fts, qmask, umask, lengths)
         # question:
         # ei: 一个batch的dialog组成的图对应的边组合
         # et: 边的种类（共4*2=8种）
@@ -180,10 +183,8 @@ if __name__ == '__main__':
                                  context_attention=args.attention,
                                  dropout=args.dropout,
                                  nodal_attention=args.nodal_attention,
-                                 no_cuda=args.no_cuda,
+                                 no_cuda=not is_cuda,
                                  use_input_project=args.use_input_project)
-    logger.info('Graph NN with', args.base_model, 'as base model.')
-    name = 'Graph'
     model.cuda()
     # 计算训练集合中各个类别所占的比例
     loss_weights = torch.FloatTensor([1/0.093303,  1/0.409135, 1/0.156883, 1/0.065703, 1/0.218971, 1/0.016067, 1/0.039938])

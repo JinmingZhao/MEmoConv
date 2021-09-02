@@ -754,37 +754,26 @@ def attentive_node_features(emotions, seq_lengths, umask, matchatt_layer, no_cud
     return att_emotions
 
 
-def classify_node_features(emotions, seq_lengths, umask, matchatt_layer, linear_layer, dropout_layer, smax_fc_layer, nodal_attn, avec, no_cuda):
+def classify_node_features(emotions, seq_lengths, umask, matchatt_layer, linear_layer, dropout_layer, smax_fc_layer, nodal_attn, no_cuda):
     """
     Function for the final classification, as in Equation 7, 8, 9. in the paper.
     """
 
     if nodal_attn:
-
         emotions = attentive_node_features(emotions, seq_lengths, umask, matchatt_layer, no_cuda)
         hidden = F.relu(linear_layer(emotions))
         hidden = dropout_layer(hidden)
         hidden = smax_fc_layer(hidden)
-
-        if avec:
-            return torch.cat([hidden[:, j, :][:seq_lengths[j]] for j in range(len(seq_lengths))])
-
         log_prob = F.log_softmax(hidden, 2)
         log_prob = torch.cat([log_prob[:, j, :][:seq_lengths[j]] for j in range(len(seq_lengths))])
         return log_prob
-
     else:
 
         hidden = F.relu(linear_layer(emotions))
         hidden = dropout_layer(hidden)
         hidden = smax_fc_layer(hidden)
-
-        if avec:
-            return hidden
-
         log_prob = F.log_softmax(hidden, 1)
         return log_prob
-
 
 class GraphNetwork(torch.nn.Module):
     def __init__(self, num_features, num_classes, num_relations, max_seq_len, hidden_size=64, dropout=0.5, no_cuda=False):
@@ -801,12 +790,12 @@ class GraphNetwork(torch.nn.Module):
         self.smax_fc  = nn.Linear(hidden_size, num_classes)
         self.no_cuda = no_cuda 
 
-    def forward(self, x, edge_index, edge_norm, edge_type, seq_lengths, umask, nodal_attn, avec):
-        
+    def forward(self, x, edge_index, edge_norm, edge_type, seq_lengths, umask, nodal_attn):
+        print('[debug] current is OK')
         out = self.conv1(x, edge_index, edge_type, edge_norm)
         out = self.conv2(out, edge_index)
         emotions = torch.cat([x, out], dim=-1)
-        log_prob = classify_node_features(emotions, seq_lengths, umask, self.matchatt, self.linear, self.dropout, self.smax_fc, nodal_attn, avec, self.no_cuda)
+        log_prob = classify_node_features(emotions, seq_lengths, umask, self.matchatt, self.linear, self.dropout, self.smax_fc, nodal_attn, self.no_cuda)
         return log_prob
 
 class DialogueGCNModel(nn.Module):
@@ -820,6 +809,11 @@ class DialogueGCNModel(nn.Module):
         self.base_model = base_model
         self.no_cuda = no_cuda
         self.use_input_project = use_input_project
+
+        if self.use_input_project:
+            print('Using use_input_project from {} to {}'.format(D_m, D_e))
+            self.project = nn.Linear(D_m, D_e)
+            D_m = D_e
 
         # The base model is the sequential context encoder.
         if self.base_model == 'DialogRNN':
@@ -839,12 +833,7 @@ class DialogueGCNModel(nn.Module):
         else:
             print ('Base model must be one of DialogRNN/LSTM/GRU')
             raise NotImplementedError 
-        
-        if self.use_input_project:
-            print('Using use_input_project from {} to {}'.format(D_m, D_g))
-            self.project = nn.Linear(D_m, D_g)
-            D_m = D_g
-
+    
         n_relations = 2 * n_speakers ** 2
         self.window_past = window_past
         self.window_future = window_future
@@ -894,19 +883,16 @@ class DialogueGCNModel(nn.Module):
             emotions_b, alpha_b = self.dialog_rnn_r(rev_U, rev_qmask)
             emotions_b = self._reverse_seq(emotions_b, umask)
             emotions = torch.cat([emotions_f,emotions_b],dim=-1)
-
         elif self.base_model == 'LSTM':
             emotions, hidden = self.lstm(U)
-
         elif self.base_model == 'GRU':
             emotions, hidden = self.gru(U)
-
         elif self.base_model == 'None':
             emotions = self.base_linear(U)
 
         features, edge_index, edge_norm, edge_type, edge_index_lengths = batch_graphify(emotions, qmask, seq_lengths, self.window_past, self.window_future, self.edge_type_mapping, self.att_model, self.no_cuda)
-        log_prob = self.graph_net(features, edge_index, edge_norm, edge_type, seq_lengths, umask, self.nodal_attention, self.avec)
-
+        log_prob = self.graph_net(features, edge_index, edge_norm, edge_type, seq_lengths, umask, self.nodal_attention)    
+    
         return log_prob, edge_index, edge_norm, edge_type, edge_index_lengths
 
 

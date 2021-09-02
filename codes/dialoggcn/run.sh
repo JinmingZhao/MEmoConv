@@ -9,8 +9,8 @@ do
         --run_idx=$run_idx --attention general --active_listener --class_weight 
         --max_epoch 80 --patience 20 --fix_lr_epoch 30 --warmup_epoch 5
         --use_input_project
-        --emotion_dim 256 --batch-size 32 --dropout 0.4 --lr 0.0003 --l2 0.0
-        --base-model 'LSTM' --graph_model --nodal_attention 
+        --emotion_dim 256 --batch_size 32 --dropout 0.4 --lr 0.0003 --l2 0.0
+        --base_model 'LSTM' --graph_model --nodal_attention 
         --windowp 10 --windowf 10
     "
     echo "\n-------------------------------------------------------------------------------------"

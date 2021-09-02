@@ -10,14 +10,13 @@ import time
 import datetime
 
 from sklearn.metrics import f1_score, confusion_matrix, accuracy_score,\
-                        classification_report, precision_score, recall_score
-from model import BiModel, Model, MaskedNLLLoss
-from dataloader import CHMEDDataset
-from config import ftname2dim
+                        classification_report, recall_score
+from codes.dialogrnn.model import BiModel, Model, MaskedNLLLoss
+from codes.dialogrnn.dataloader import CHMEDDataset
+from codes.dialogrnn.config import ftname2dim
 from codes.utt_baseline.utils.logger import get_logger
 from codes.utt_baseline.run_baseline import make_path, clean_chekpoints
 from codes.utt_baseline.utils.save import ModelSaver
-
 
 def get_chmed_loaders(root_dir, path, batch_size=32, num_workers=0, pin_memory=False):
 
@@ -39,7 +38,7 @@ def get_chmed_loaders(root_dir, path, batch_size=32, num_workers=0, pin_memory=F
                              collate_fn=testset.collate_fn,
                              num_workers=num_workers,
                              pin_memory=pin_memory)
-    logger.info('Train {} Val {} test {}'.format(trainset.len, validset.len, testset.len))
+    print('Train {} Val {} test {}'.format(trainset.len, validset.len, testset.len))
     return train_loader, valid_loader, test_loader
 
 def train_or_eval_model(model, loss_function, dataloader, optimizer=None, train=False):
