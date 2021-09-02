@@ -16,8 +16,8 @@ do
             --max_epoch 50 --patience 10 --fix_lr_epoch 20 --warmup_epoch 3
             --dropout_rate 0.5  --learning_rate 2e-4 --batch_size 64 --postfix self
             --v_ft_type sent_avg_affectdenseface --v_input_size 342 --max_visual_tokens 70
-            --a_ft_type sent_avg_wav2vec_zh --a_input_size 1024 --max_acoustic_tokens 150
-            --l_ft_type sent_avg_robert_base_wwm_chinese --l_input_size 768 --max_text_tokens 30
+            --a_ft_type sent_wav2vec_zh2chmed2e5last --a_input_size 1024 --max_acoustic_tokens 150
+            --l_ft_type sent_cls_robert_wwm_base_chinese4chmed --l_input_size 768 --max_text_tokens 30
             --l_hidden_size 256 --v_hidden_size 256 --a_hidden_size 256 --mid_fusion_layers '256,128'
         "
         echo "\n-------------------------------------------------------------------------------------"
@@ -39,8 +39,8 @@ do
             --max_epoch 50 --patience 10 --fix_lr_epoch 20 --warmup_epoch 3
             --dropout_rate 0.5  --learning_rate 2e-4 --batch_size 64 --postfix self
             --v_ft_type sent_avg_affectdenseface --v_input_size 342 --max_visual_tokens 70
-            --a_ft_type sent_avg_wav2vec_zh --a_input_size 1024 --max_acoustic_tokens 150
-            --l_ft_type sent_avg_robert_base_wwm_chinese --l_input_size 768 --max_text_tokens 30
+            --a_ft_type sent_wav2vec_zh2chmed2e5last --a_input_size 1024 --max_acoustic_tokens 150
+            --l_ft_type sent_cls_robert_wwm_base_chinese4chmed --l_input_size 768 --max_text_tokens 30
             --l_hidden_size 512 --v_hidden_size 256 --a_hidden_size 512 --mid_fusion_layers '512,256'
         "
         echo "\n-------------------------------------------------------------------------------------"
