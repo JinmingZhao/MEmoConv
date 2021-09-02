@@ -145,7 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--result_dir', default='/data9/memoconv/results/dialoggcn')
     args = parser.parse_args()
 
-    output_name_ =  'Dlggcn_' + args.modals + 'Base{}E{}WP{}WF{}dp{}_lr{}_'.format(args.base_model, args.emotion_dim, args.windowp, \
+    output_name_ =  'Dlggcn_' + args.modals + '_Base{}E{}WP{}WF{}dp{}_lr{}_'.format(args.base_model, args.emotion_dim, args.windowp, \
                     args.windowf, args.dropout, args.lr) + '_'+args.path
     if args.class_weight:
         output_name_ += '_class_weight'
@@ -203,25 +203,24 @@ if __name__ == '__main__':
 
     for epoch in range(args.max_epoch):
         start_time = time.time()
-        train_log, _,_,_,_,_= train_or_eval_graph_model(model, loss_function,
-                                               train_loader, optimizer, True)
+        train_log, _,_,_,_= train_or_eval_graph_model(model, loss_function, train_loader, optimizer, True)
         # for evaluation
         logger.info("============ Evaluation Epoch {} ============".format(epoch))
         logger.info("Cur learning rate {}".format(optimizer.state_dict()['param_groups'][0]['lr']))
-        logger.info("[Traning] Loss: {:.2f}".format(train_log['loss']), 
-                    "\t F1: {:.2f}, ".format(train_log['F1']*100),
-                    "\t WA: {:.2f},".format(train_log['WA']*100),
-                    "\t UA: {:.2f}".format(train_log['UA']*100))
-        val_log, _,_,_,_,_= train_or_eval_graph_model(model, loss_function, valid_loader)
-        logger.info("[Validation] Loss: {:.2f}".format(val_log['loss']), 
-                    "\t F1: {:.2f}, ".format(val_log['F1']*100),
-                    "\t WA: {:.2f},".format(val_log['WA']*100),
-                    "\t UA: {:.2f}".format(val_log['UA']*100))
+        logger.info(str("[Traning] Loss: {:.2f}".format(train_log['loss']) + 
+                    "\t F1: {:.2f}, ".format(train_log['F1']*100) + 
+                    "\t WA: {:.2f},".format(train_log['WA']*100) +
+                    "\t UA: {:.2f}".format(train_log['UA']*100)))
+        val_log, _,_,_,_= train_or_eval_graph_model(model, loss_function, valid_loader)
+        logger.info(str("[Validation] Loss: {:.2f}".format(val_log['loss']) + 
+                    "\t F1: {:.2f}, ".format(val_log['F1']*100) + 
+                    "\t WA: {:.2f},".format(val_log['WA']*100) + 
+                    "\t UA: {:.2f}".format(val_log['UA']*100)))
         test_log, test_label, test_pred, vids, _ = train_or_eval_graph_model(model, loss_function, test_loader)
-        logger.info("[Testing] Loss: {:.2f}".format(test_log['loss']), 
-                    "\t F1: {:.2f}, ".format(test_log['F1']*100),
-                    "\t WA: {:.2f},".format(test_log['WA']*100),
-                    "\t UA: {:.2f}".format(test_log['UA']*100))
+        logger.info(str("[Testing] Loss: {:.2f}".format(test_log['loss']) +
+                    "\t F1: {:.2f}, ".format(test_log['F1']*100) + 
+                    "\t WA: {:.2f},".format(test_log['WA']*100) + 
+                    "\t UA: {:.2f}".format(test_log['UA']*100)))
         print('Save model at {} epoch'.format(epoch))
         model_saver.save(model, epoch)
         # update the current best model based on validation results
@@ -247,11 +246,11 @@ if __name__ == '__main__':
     ck = torch.load(checkpoint_path)
     model.load_state_dict(ck)
     val_log, val_label, val_pred, vids, _ = train_or_eval_graph_model(model, loss_function, valid_loader)
-    logger.info('[Val] result WA: %.4f UAR %.4f F1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1']))
-    logger.info('\n{}'.format(val_log['cm']))
+    logger.info(str('[Val] result WA: %.4f UAR %.4f F1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1'])))
+    logger.info(str('\n{}'.format(val_log['cm'])))
     tst_log, tst_label, tst_pred,vids, _  = train_or_eval_graph_model(model, loss_function, test_loader)
-    logger.info('[Tst] result WA: %.4f UAR %.4f F1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1']))
-    logger.info('\n{}'.format(tst_log['cm']))
+    logger.info(str('[Tst] result WA: %.4f UAR %.4f F1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1'])))
+    logger.info(str('\n{}'.format(tst_log['cm'])))
     clean_chekpoints(checkpoint_dir, best_eval_epoch)
     logger.info(classification_report(tst_label, tst_pred, digits=4))
     logger.info(confusion_matrix(tst_label, tst_pred))
