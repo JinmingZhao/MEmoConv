@@ -4,6 +4,7 @@ Licensed under the MIT license.
 
 saving utilities
 """
+from __future__ import print_function
 import json
 import os
 from os.path import abspath, dirname, exists, join
@@ -33,7 +34,7 @@ class ModelSaver(object):
 
     def save(self, model, step, optimizer=None):
         output_model_file = join(self.output_dir,
-                                 f"{self.prefix}_{step}.{self.suffix}")
+                                 "{}_{}.{}".format(self.prefix, step, self.suffix))
         state_dict = {k: v.cpu() if isinstance(v, torch.Tensor) else v
                       for k, v in model.state_dict().items()}
         torch.save(state_dict, output_model_file)
@@ -41,4 +42,4 @@ class ModelSaver(object):
             dump = {'step': step, 'optimizer': optimizer.state_dict()}
             if hasattr(optimizer, '_amp_stash'):
                 pass  # TODO fp16 optimizer
-            torch.save(dump, f'{self.output_dir}/train_state_{step}.pt')
+            torch.save(dump, '{}/train_state_{}.pt'.format(self.output_dir, step))

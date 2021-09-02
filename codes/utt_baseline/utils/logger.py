@@ -6,7 +6,7 @@ def get_logger(path, suffix):
     cur_time = time.strftime('%Y-%m-%d-%H.%M.%S', time.localtime(time.time()))
     logger = logging.getLogger(cur_time)
     logger.setLevel(level = logging.INFO)
-    handler = logging.FileHandler(os.path.join(path, f"{suffix}_{cur_time}.log"))
+    handler = logging.FileHandler(os.path.join(path, "{}_{}.log".format(suffix, cur_time)))
     handler.setLevel(logging.INFO)
 
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

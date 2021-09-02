@@ -218,24 +218,24 @@ if __name__ == '__main__':
     for epoch in range(args.max_epoch):
         start_time = time.time()
         train_log, _,_,_,_= train_or_eval_model(model, loss_function,
-                                               train_loader, optimizer, True)
+                                               train_loader, optimizer, True)        
         # for evaluation
         logger.info("============ Evaluation Epoch {} ============".format(epoch))
         logger.info("Cur learning rate {}".format(optimizer.state_dict()['param_groups'][0]['lr']))
-        logger.info(f"[Traning] Loss: {train_log['loss']:.2f},"
-                    f"\t F1: {train_log['F1']*100:.2f},"
-                    f"\t WA: {train_log['WA']*100:.2f},"
-                    f"\t UA: {train_log['UA']*100:.2f},\n")
+        logger.info("[Traning] Loss: {:.2f}".format(train_log['loss']), 
+                    "\t F1: {:.2f}, ".format(train_log['F1']*100),
+                    "\t WA: {:.2f},".format(train_log['WA']*100),
+                    "\t UA: {:.2f}".format(train_log['UA']*100))
         val_log, _,_,_,_= train_or_eval_model(model, loss_function, valid_loader)
-        logger.info(f"[Validation] Loss: {val_log['loss']:.2f},"
-                    f"\t F1: {val_log['F1']*100:.2f},"
-                    f"\t WA: {val_log['WA']*100:.2f},"
-                    f"\t UA: {val_log['UA']*100:.2f},\n")
+        logger.info("[Validation] Loss: {:.2f}".format(val_log['loss']), 
+                    "\t F1: {:.2f}, ".format(val_log['F1']*100),
+                    "\t WA: {:.2f},".format(val_log['WA']*100),
+                    "\t UA: {:.2f}".format(val_log['UA']*100))
         test_log, test_label, test_pred, test_mask, attentions = train_or_eval_model(model, loss_function, test_loader)
-        logger.info(f"[Testing] Loss: {test_log['loss']:.2f},"
-                    f"\t F1: {test_log['F1']*100:.2f},"
-                    f"\t WA: {test_log['WA']*100:.2f},"
-                    f"\t UA: {test_log['UA']*100:.2f},\n")
+        logger.info("[Testing] Loss: {:.2f}".format(test_log['loss']), 
+                    "\t F1: {:.2f}, ".format(test_log['F1']*100),
+                    "\t WA: {:.2f},".format(test_log['WA']*100),
+                    "\t UA: {:.2f}".format(test_log['UA']*100))
         print('Save model at {} epoch'.format(epoch))
         model_saver.save(model, epoch)
         # update the current best model based on validation results
