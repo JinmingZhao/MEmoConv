@@ -198,9 +198,10 @@ if __name__ == '__main__':
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
     train_loader, valid_loader, test_loader = get_chmed_loaders(root_dir=args.ft_dir, path=args.path,
                                                             batch_size=args.batch_size, num_workers=0)
-    best_eval_f1 = 0              # record the best eval f1
-    best_eval_wf1 = 0              # record the best eval weighted-f1
-    best_eval_epoch = -1           # record the best eval epoch
+    best_eval_f1 = 0              # record the best eval F1
+    best_eval_wf1 = 0              # record the best eval WF1
+    best_eval_f1_epoch = -1           # record the best eval F1 epoch
+    best_eval_wf1_epoch = -1           # record the best eval WF1 epoch
     patience = args.patience
 
     for epoch in range(args.max_epoch):
@@ -229,11 +230,19 @@ if __name__ == '__main__':
         print('Save model at {} epoch'.format(epoch))
         model_saver.save(model, epoch)
         # update the current best model based on validation results
+         # update the current best model based on validation results
+        if val_log['WF1'] > best_eval_wf1:
+                best_eval_wf1_epoch = epoch
+                best_eval_wf1 = val_log['WF1']
+                # reset to init
+                patience = args.patience
+        
         if val_log['F1'] > best_eval_f1:
-            best_eval_epoch = epoch
+            best_eval_f1_epoch = epoch
             best_eval_f1 = val_log['F1']
             # reset to init
             patience = args.patience
+
         # for early stop
         if patience <= 0:            
             break
@@ -242,19 +251,36 @@ if __name__ == '__main__':
         # update the learning rate
         scheduler.step()
     # print best eval result
-    logger.info('Loading Marco-F1 best model found on val set: epoch-%d' % best_eval_epoch)
-    checkpoint_path = os.path.join(checkpoint_dir, 'model_step_{}.pt'.format(best_eval_epoch))
+    logger.info('Loading best WF1 model found on val set: epoch-%d' % best_eval_wf1_epoch)
+    checkpoint_path = os.path.join(checkpoint_dir, 'model_step_{}.pt'.format(best_eval_wf1_epoch))
     if not os.path.exists(checkpoint_path):
         logger.error("Load checkpoint error, not exist such file")
         exit(0)
     ck = torch.load(checkpoint_path)
     model.load_state_dict(ck)
     val_log, val_label, val_pred, vids, _ = train_or_eval_graph_model(model, loss_function, valid_loader)
-    logger.info(str('[Val] F1result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1'], val_log['WF1'])))
-    logger.info(str('\n{}'.format(val_log['cm'])))
+    logger.info(str('[Val] WF1-result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1'],  val_log['WF1'])))
+    logger.info(str('\n{}'.format(val_log['cm'])))    
     tst_log, tst_label, tst_pred,vids, _  = train_or_eval_graph_model(model, loss_function, test_loader)
-    logger.info(str('[Tst] F1result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1'], tst_log['WF1'])))
+    logger.info(str('[Tst] WF1-result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1'], tst_log['WF1'])))
     logger.info(str('\n{}'.format(tst_log['cm'])))
-    # clean_chekpoints(checkpoint_dir, best_eval_epoch)
     logger.info(classification_report(tst_label, tst_pred, digits=4))
     logger.info(confusion_matrix(tst_label, tst_pred))
+
+    logger.info('Loading F1 best model found on val set: epoch-%d' % best_eval_f1_epoch)
+    checkpoint_path = os.path.join(checkpoint_dir, 'model_step_{}.pt'.format(best_eval_f1_epoch))
+    if not os.path.exists(checkpoint_path):
+        logger.error("Load checkpoint error, not exist such file")
+        exit(0)
+    ck = torch.load(checkpoint_path)
+    model.load_state_dict(ck)
+    val_log, val_label, val_pred, vids, _ = train_or_eval_graph_model(model, loss_function, valid_loader)
+    logger.info(str('[Val] F1-result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1'], val_log['WF1'])))
+    logger.info(str('\n{}'.format(val_log['cm'])))
+    tst_log, tst_label, tst_pred,vids, _  = train_or_eval_graph_model(model, loss_function, test_loader)
+    logger.info(str('[Tst] F1-result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1'], tst_log['WF1'])))
+    logger.info(str('\n{}'.format(tst_log['cm'])))
+    logger.info(classification_report(tst_label, tst_pred, digits=4))
+    logger.info(confusion_matrix(tst_label, tst_pred))
+
+    clean_chekpoints(checkpoint_dir, [best_eval_wf1_epoch, best_eval_f1_epoch])
