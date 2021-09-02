@@ -7,6 +7,7 @@ import os
 import numpy as np
 import collections
 from preprocess.FileOps import read_pkl, read_file, read_csv, write_pkl
+from codes.dialogrnn.config import ftname2dim
 
 def get_dialog2utts(meta_filepath):
     dialog2uttIds = collections.OrderedDict()
@@ -48,13 +49,34 @@ def get_dialog2labels(dialog2uttIds, utt2label_filepath):
         dialog2labels[dialog_id] = labels
     return dialog2labels
 
-def get_dialog2fts(dialog2uttIds, utt2ft_filepath):
+def get_dialog2fts(dialog2uttIds, utt2ft_filepath, modality_feature_dim, is_seq=True):
     dialog2fts = collections.OrderedDict()
-    utt2ft = read_pkl(utt2ft_filepath)
+    uttId2ft = read_pkl(utt2ft_filepath)
     for dialog_id in dialog2uttIds.keys():
         uttIds = dialog2uttIds[dialog_id]
-        ft = [utt2ft[uttId] for uttId in uttIds]
-        dialog2fts[dialog_id] = np.array(ft)
+        dialog_fts = []
+        for uttId in uttIds:
+            if isinstance(uttId2ft[uttId], str):
+                dialog_fts.append(uttId2ft[uttId])
+                continue
+            if len(uttId2ft[uttId].shape) == 3:
+                uttId2ft[uttId] = uttId2ft[uttId][0]
+             # 异常情况处理
+            if uttId2ft[uttId].size == 1:
+                print('Utt {} is None Speech/Visual'.format(uttId))
+                if is_seq:
+                    uttId2ft[uttId] = np.zeros([1, modality_feature_dim])
+                else:
+                    uttId2ft[uttId] = np.zeros(modality_feature_dim) 
+            # 异常情况处理
+            if uttId2ft[uttId].shape[-1] == 0:
+                print('Utt {} is Feature Dim is 0'.format(uttId))
+                if is_seq:
+                    uttId2ft[uttId] = np.zeros([1, modality_feature_dim])
+                else:
+                    uttId2ft[uttId] = np.zeros(modality_feature_dim)
+            dialog_fts.append(uttId2ft[uttId])
+        dialog2fts[dialog_id] = np.array(dialog_fts)
     return dialog2fts
 
 def get_set_vids(train_movies_filepath, all_dialog2utts):
@@ -68,9 +90,9 @@ def get_set_vids(train_movies_filepath, all_dialog2utts):
 
 if __name__ == '__main__':
     # export PYTHONPATH=/data9/MEmoConv
-    # modality_ft_type = {'speech':'sent_wav2vec_zh2chmed2e5last', 'visual':'sent_avg_affectdenseface', 'text':'sent_cls_robert_wwm_base_chinese4chmed'}
+    modality_ft_type = {'speech':'sent_wav2vec_zh2chmed2e5last', 'visual':'sent_avg_affectdenseface', 'text':'sent_cls_robert_wwm_base_chinese4chmed'}
     # modality_ft_type = {'speech':'sent_avg_wav2vec_zh', 'visual':'sent_avg_affectdenseface', 'text':'sent_avg_robert_base_wwm_chinese'}
-    modality_ft_type = {'speech':'wav2vec_zh', 'visual':'affectdenseface', 'text':'robert_base_wwm_chinese'}
+    # modality_ft_type = {'speech':'wav2vec_zh', 'visual':'affectdenseface', 'text':'robert_base_wwm_chinese'}
     feature_root_dir = '/data9/memoconv/modality_fts'
     output_root_dir = '/data9/memoconv/modality_fts/dialogrnn'
     feature_save_path = os.path.join(output_root_dir, 'A{}_V{}_L{}.pkl'.format(modality_ft_type['speech'], 
@@ -104,21 +126,21 @@ if __name__ == '__main__':
         # videoTextFt
         feat_type = modality_ft_type['text']
         utt2ft_filepath = os.path.join(feature_root_dir, 'text/movies', '{}_text_ft_{}.pkl'.format(movie_name, feat_type))
-        dialog2textfts = get_dialog2fts(dialog2utts, utt2ft_filepath)
+        dialog2textfts = get_dialog2fts(dialog2utts, utt2ft_filepath, ftname2dim[ 'L' + modality_ft_type['text']])
         all_dialog2textfts.update(dialog2textfts)
         # videoSpeechFt
         feat_type = modality_ft_type['speech']
         utt2ft_filepath = os.path.join(feature_root_dir, 'speech/movies', '{}_speech_ft_{}.pkl'.format(movie_name, feat_type))
-        dialog2speechfts = get_dialog2fts(dialog2utts, utt2ft_filepath)
+        dialog2speechfts = get_dialog2fts(dialog2utts, utt2ft_filepath, ftname2dim['A' + modality_ft_type['speech']])
         all_dialog2speechfts.update(dialog2speechfts)
         # videoVisualFt
         feat_type = modality_ft_type['visual']
         utt2ft_filepath = os.path.join(feature_root_dir, 'visual/movies', '{}_visual_ft_{}.pkl'.format(movie_name, feat_type))
-        dialog2visualfts = get_dialog2fts(dialog2utts, utt2ft_filepath)
+        dialog2visualfts = get_dialog2fts(dialog2utts, utt2ft_filepath, ftname2dim['V' + modality_ft_type['visual']])
         all_dialog2visualfts.update(dialog2visualfts)
         # videoSentence
         utt2ft_filepath = os.path.join(feature_root_dir, 'text/movies', '{}_text_info.pkl'.format(movie_name))
-        dialog2sents = get_dialog2fts(dialog2utts, utt2ft_filepath)
+        dialog2sents = get_dialog2fts(dialog2utts, utt2ft_filepath, None)
         all_dialog2sents.update(dialog2sents)
         assert len(dialog2utts) == len(dialog2spks) == len(dialog2labels) == len(dialog2textfts) == len(dialog2speechfts) == len(dialog2visualfts) == len(dialog2sents)
     # trainVid
