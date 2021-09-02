@@ -791,8 +791,8 @@ class GraphNetwork(torch.nn.Module):
         self.no_cuda = no_cuda 
 
     def forward(self, x, edge_index, edge_norm, edge_type, seq_lengths, umask, nodal_attn):
-        print('[debug] current is OK')
-        out = self.conv1(x, edge_index, edge_type, edge_norm)
+        # out = self.conv1(x, edge_index, edge_type, edge_norm)
+        out = self.conv1(x, edge_index, edge_type) # new version no edge-norm
         out = self.conv2(out, edge_index)
         emotions = torch.cat([x, out], dim=-1)
         log_prob = classify_node_features(emotions, seq_lengths, umask, self.matchatt, self.linear, self.dropout, self.smax_fc, nodal_attn, self.no_cuda)
