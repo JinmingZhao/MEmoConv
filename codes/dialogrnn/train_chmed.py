@@ -252,7 +252,7 @@ if __name__ == '__main__':
                 patience = args.patience
         
         if val_log['F1'] > best_eval_f1:
-            best_eval_epoch = epoch
+            best_eval_f1_epoch = epoch
             best_eval_f1 = val_log['F1']
             # reset to init
             patience = args.patience

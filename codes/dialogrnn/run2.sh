@@ -7,7 +7,7 @@ do
     for run_idx in 1 2 3;
     do
     cmd="CUDA_VISIBLE_DEVICES=${gpu} python train_chmed.py --modals=$modality 
-        --path Asent_avg_wav2vec_zh-Vsent_avg_affectdenseface-Lsent_avg_robert_base_wwm_chinese
+        --path Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed
         --run_idx=$run_idx --attention general --active_listener --class_weight 
         --max_epoch 80 --patience 20 --fix_lr_epoch 30 --warmup_epoch 5
         --dropout 0.1 --rec_dropout 0.1 --lr 5e-4  --l2 0.00001 --batch_size 32
@@ -26,7 +26,7 @@ do
     for run_idx in 1 2 3;
     do
     cmd="CUDA_VISIBLE_DEVICES=${gpu} python train_chmed.py --modals=$modality 
-        --path Asent_avg_wav2vec_zh-Vsent_avg_affectdenseface-Lsent_avg_robert_base_wwm_chinese
+        --path Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed
         --run_idx=$run_idx --attention general --active_listener --class_weight 
         --max_epoch 80 --patience 20 --fix_lr_epoch 30 --warmup_epoch 5
         --dropout 0.1 --rec_dropout 0.1 --lr 5e-4  --l2 0.00001 --batch_size 32
