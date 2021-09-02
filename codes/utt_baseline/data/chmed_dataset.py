@@ -51,7 +51,7 @@ class ChmedDataset(data.Dataset):
                     example['acoustic'] = example['acoustic'][:self.opt.max_acoustic_tokens]
                 else:
                     example['acoustic'] = torch.cat([example['acoustic'], \
-                            torch.zeros([self.opt.max_acoustic_tokens-len(example['acoustic'])] + list(example['visual'].shape[1:]))], dim=0)
+                            torch.zeros([self.opt.max_acoustic_tokens-len(example['acoustic'])] + list(example['acoustic'].shape[1:]))], dim=0)
 
         if 'visual' in self.exits_modality.keys():
             example['visual'] = torch.from_numpy(np.asarray(self.exits_modality['visual'][index], dtype=np.float32))

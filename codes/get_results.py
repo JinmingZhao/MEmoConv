@@ -41,9 +41,9 @@ def analysis_log(log):
     return val_log, test_log
 
 if __name__ == '__main__':
-    output_name = 'Dlgrnn_AVL_G800P800E128H128A128_dp0.1_lr0.0005_Asent_avg_wav2vec_zh-Vsent_avg_denseface-Lsent_cls_bert_base_chinese_class_weight_inputproj'
+    output_name = 'Dlggcn_AVL_BaseLSTME180WP10WF10dp0.4_lr0.0003__AIS10_norm-Vsent_avg_denseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj'
     result_dir = '/data9/memoconv/results'
-    model_name = 'dialogrnn'
+    model_name = 'dialoggcn'
     log_dirs = glob(os.path.join(result_dir, model_name, output_name + '_run*', 'log'))
     print(log_dirs)
     print(output_name)

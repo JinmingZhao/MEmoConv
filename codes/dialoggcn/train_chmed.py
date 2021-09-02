@@ -97,8 +97,9 @@ def train_or_eval_graph_model(model, loss_function, dataloader, optimizer=None, 
     avg_accuracy = round(accuracy_score(labels,preds), 2)
     avg_uar = round(recall_score(labels,preds,average='macro'), 2)
     avg_fscore = round(f1_score(labels,preds,average='macro'), 2)
+    avg_wfscore = round(f1_score(labels,preds,average='weighted'), 2)
     cm = confusion_matrix(labels, preds)
-    val_log = {'F1':avg_fscore, 'UA':avg_uar, 'WA':avg_accuracy, 'loss':avg_loss, 'cm': cm}
+    val_log = {'WF1':avg_wfscore, 'F1':avg_fscore, 'UA':avg_uar, 'WA':avg_accuracy, 'loss':avg_loss, 'cm': cm}
     return val_log, labels, preds, vids, [ei, et, en, el]
 
 
@@ -198,6 +199,7 @@ if __name__ == '__main__':
     train_loader, valid_loader, test_loader = get_chmed_loaders(root_dir=args.ft_dir, path=args.path,
                                                             batch_size=args.batch_size, num_workers=0)
     best_eval_f1 = 0              # record the best eval f1
+    best_eval_wf1 = 0              # record the best eval weighted-f1
     best_eval_epoch = -1           # record the best eval epoch
     patience = args.patience
 
@@ -208,19 +210,22 @@ if __name__ == '__main__':
         logger.info("============ Evaluation Epoch {} ============".format(epoch))
         logger.info("Cur learning rate {}".format(optimizer.state_dict()['param_groups'][0]['lr']))
         logger.info(str("[Traning] Loss: {:.2f}".format(train_log['loss']) + 
-                    "\t F1: {:.2f}, ".format(train_log['F1']*100) + 
                     "\t WA: {:.2f},".format(train_log['WA']*100) +
-                    "\t UA: {:.2f}".format(train_log['UA']*100)))
+                    "\t UA: {:.2f}".format(train_log['UA']*100) +
+                    "\t F1: {:.2f}, ".format(train_log['F1']*100)+
+                    "\t WF1: {:.2f}, ".format(train_log['WF1']*100)))
         val_log, _,_,_,_= train_or_eval_graph_model(model, loss_function, valid_loader)
         logger.info(str("[Validation] Loss: {:.2f}".format(val_log['loss']) + 
-                    "\t F1: {:.2f}, ".format(val_log['F1']*100) + 
-                    "\t WA: {:.2f},".format(val_log['WA']*100) + 
-                    "\t UA: {:.2f}".format(val_log['UA']*100)))
+                    "\t WA: {:.2f},".format(val_log['WA']*100) +
+                    "\t UA: {:.2f}".format(val_log['UA']*100) +
+                    "\t F1: {:.2f}, ".format(val_log['F1']*100)+
+                    "\t WF1: {:.2f}, ".format(val_log['WF1']*100)))
         test_log, test_label, test_pred, vids, _ = train_or_eval_graph_model(model, loss_function, test_loader)
-        logger.info(str("[Testing] Loss: {:.2f}".format(test_log['loss']) +
-                    "\t F1: {:.2f}, ".format(test_log['F1']*100) + 
-                    "\t WA: {:.2f},".format(test_log['WA']*100) + 
-                    "\t UA: {:.2f}".format(test_log['UA']*100)))
+        logger.info(str("[Testing] Loss: {:.2f}".format(train_log['loss']) + 
+                    "\t WA: {:.2f},".format(train_log['WA']*100) +
+                    "\t UA: {:.2f}".format(train_log['UA']*100) +
+                    "\t F1: {:.2f}, ".format(train_log['F1']*100)+
+                    "\t WF1: {:.2f}, ".format(train_log['WF1']*100)))
         print('Save model at {} epoch'.format(epoch))
         model_saver.save(model, epoch)
         # update the current best model based on validation results
@@ -236,9 +241,8 @@ if __name__ == '__main__':
             patience -= 1
         # update the learning rate
         scheduler.step()
-        
     # print best eval result
-    logger.info('Loading best model found on val set: epoch-%d' % best_eval_epoch)
+    logger.info('Loading Marco-F1 best model found on val set: epoch-%d' % best_eval_epoch)
     checkpoint_path = os.path.join(checkpoint_dir, 'model_step_{}.pt'.format(best_eval_epoch))
     if not os.path.exists(checkpoint_path):
         logger.error("Load checkpoint error, not exist such file")
@@ -246,11 +250,11 @@ if __name__ == '__main__':
     ck = torch.load(checkpoint_path)
     model.load_state_dict(ck)
     val_log, val_label, val_pred, vids, _ = train_or_eval_graph_model(model, loss_function, valid_loader)
-    logger.info(str('[Val] result WA: %.4f UAR %.4f F1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1'])))
+    logger.info(str('[Val] F1result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1'], val_log['WF1'])))
     logger.info(str('\n{}'.format(val_log['cm'])))
     tst_log, tst_label, tst_pred,vids, _  = train_or_eval_graph_model(model, loss_function, test_loader)
-    logger.info(str('[Tst] result WA: %.4f UAR %.4f F1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1'])))
+    logger.info(str('[Tst] F1result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1'], tst_log['WF1'])))
     logger.info(str('\n{}'.format(tst_log['cm'])))
-    clean_chekpoints(checkpoint_dir, best_eval_epoch)
+    # clean_chekpoints(checkpoint_dir, best_eval_epoch)
     logger.info(classification_report(tst_label, tst_pred, digits=4))
     logger.info(confusion_matrix(tst_label, tst_pred))

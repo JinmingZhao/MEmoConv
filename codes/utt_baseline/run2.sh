@@ -5,7 +5,7 @@ set -e
 gpu=$1
 
 # 单模态的实验
-for modality in A V;
+for modality in A V L;
 do
     for run_idx in 1 2 3;
     do

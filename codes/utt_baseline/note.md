@@ -1,3 +1,8 @@
+参数调整:
+1. 根据WF1和F1保留模型，最终结果根据WF1的结果
+2. 模型维度一般 512/256 就可以 --mid_fusion_layers '256,128' # 单模态 --mid_fusion_layers '512,256'  # 多模态
+
+
 ## A-comparE_norm
 2021-08-27 09:09:09,669 - 2021-08-27-09.04.59 - INFO - [Val] result WA: 0.3839 UAR 0.2406 F1 0.2349
 2021-08-27 09:09:10,823 - 2021-08-27-09.04.59 - INFO - [Tst] result WA: 0.3632 UAR 0.2112 F1 0.2033
@@ -90,10 +95,6 @@ Loading best model found on val set: epoch-19
 [Warning] error msg []
 [Val] result WA: 0.4764 UAR 0.2763 F1 0.2747
 [Tst] result WA: 0.4506 UAR 0.2505 F1 0.2431
-
-## V-LipResnet3D(from pretrianed lip reading) -- 不work
-
-## V-LipResnet3D(trained on cmed) -- 重新在Cap上训练，leo太慢了
 
 ## V-sent_avg_DenseFace
 Loading best model found on val set: epoch-8

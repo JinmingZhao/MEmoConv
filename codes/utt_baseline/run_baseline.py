@@ -16,10 +16,11 @@ def make_path(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def clean_chekpoints(ckpt_dir, store_epoch):
+def clean_chekpoints(ckpt_dir, store_epochs):
     # model_step_number.pt
     for checkpoint in os.listdir(ckpt_dir):
-        if not checkpoint.endswith('_{}.pt'.format(store_epoch)):
+        cur_epoch = int(checkpoint.split('_')[-1][:-3])
+        if cur_epoch not in store_epochs:
             if 'model_step' in checkpoint:
                 os.remove(os.path.join(ckpt_dir, checkpoint))
 
@@ -113,8 +114,10 @@ def main(opt):
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
 
     total_iters = 0                # the total number of training iterations
-    best_eval_f1 = 0              # record the best eval UAR
-    best_eval_epoch = -1           # record the best eval epoch
+    best_eval_f1 = 0              # record the best eval F1
+    best_eval_wf1 = 0              # record the best eval WF1
+    best_eval_f1_epoch = -1           # record the best eval F1 epoch
+    best_eval_wf1_epoch = -1           # record the best eval WF1 epoch
     patience = opt.patience
 
     total_steps = opt.max_epoch * int((len(trn_db) / opt.batch_size))
@@ -130,31 +133,40 @@ def main(opt):
             model.backward()            
             optimizer.step()
             # visual training loss every print_freq
-            if total_iters % 20 == 0:   # print training losses and save logging information to the disk
-                logger.info('[Traing Loss:] {}'.format(batch_loss))
+            if total_iters % 50 == 0:   # print training losses and save logging information to the disk
+                logger.info(str('[Traing Loss:] {}'.format(batch_loss)))
 
         # for evaluation
         if epoch % 1 == 0:
             logger.info("============ Evaluation Epoch {} ============".format(epoch))
             logger.info("Cur learning rate {}".format(optimizer.state_dict()['param_groups'][0]['lr']))
             val_log = evaluation(model, val_db)
-            logger.info("[Validation] Loss: {:.2f}".format(val_log['loss']), 
-                    "\t F1: {:.2f}, ".format(val_log['F1']*100),
-                    "\t WA: {:.2f},".format(val_log['WA']*100),
-                    "\t UA: {:.2f}".format(val_log['UA']*100))
+            logger.info(str("[Validation] Loss: {:.2f}".format(val_log['loss']) +
+                    "\t WA: {:.2f},".format(val_log['WA']*100) + 
+                    "\t UA: {:.2f},".format(val_log['UA']*100) + 
+                    "\t F1: {:.2f},".format(val_log['F1']*100) +
+                    "\t WF1: {:.2f},".format(val_log['WF1']*100)))
             test_log = evaluation(model, tst_db)
-            logger.info("[Testing] Loss: {:.2f}".format(test_log['loss']), 
-                    "\t F1: {:.2f}, ".format(test_log['F1']*100),
-                    "\t WA: {:.2f},".format(test_log['WA']*100),
-                    "\t UA: {:.2f}".format(test_log['UA']*100))
+            logger.info(str("[Testing] Loss: {:.2f}".format(test_log['loss']) + 
+                    "\t WA: {:.2f},".format(test_log['WA']*100) + 
+                    "\t UA: {:.2f}".format(test_log['UA']*100) + 
+                    "\t F1: {:.2f}, ".format(test_log['F1']*100) + 
+                    "\t WF1: {:.2f}, ".format(test_log['WF1']*100)))
             print('Save model at {} epoch'.format(epoch))
             model_saver.save(model, epoch)
             # update the current best model based on validation results
+            if val_log['WF1'] > best_eval_wf1:
+                best_eval_wf1_epoch = epoch
+                best_eval_wf1 = val_log['WF1']
+                # reset to init
+                patience = opt.patience
+            
             if val_log['F1'] > best_eval_f1:
-                best_eval_epoch = epoch
+                best_eval_f1_epoch = epoch
                 best_eval_f1 = val_log['F1']
                 # reset to init
                 patience = opt.patience
+
         # for early stop
         if patience <= 0:            
             break
@@ -163,35 +175,38 @@ def main(opt):
         # update the learning rate
         scheduler.step()
 
-    # print best eval result
-    logger.info('Loading best model found on val set: epoch-%d' % best_eval_epoch)
-    checkpoint_path = os.path.join(checkpoint_dir, 'model_step_{}.pt'.format(best_eval_epoch))
+    # print best WF1 eval result
+    logger.info('Loading best WF1 model found on val set: epoch-%d' % best_eval_wf1_epoch)
+    checkpoint_path = os.path.join(checkpoint_dir, 'model_step_{}.pt'.format(best_eval_wf1_epoch))
     if not os.path.exists(checkpoint_path):
         logger.error("Load checkpoint error, not exist such file")
         exit(0)
     ck = torch.load(checkpoint_path)
     model.load_state_dict(ck)
     val_log = evaluation(model, val_db, save_dir=log_dir, set_name='val')
-    logger.info('[Val] result WA: %.4f UAR %.4f F1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1']))
-    logger.info('\n{}'.format(val_log['cm']))
+    logger.info(str('[Val] WF1-result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1'],  val_log['WF1'])))
+    logger.info(str('\n{}'.format(val_log['cm'])))
     tst_log = evaluation(model, tst_db, save_dir=log_dir, set_name='test')
-    logger.info('[Tst] result WA: %.4f UAR %.4f F1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1']))
-    logger.info('\n{}'.format(tst_log['cm']))
-    clean_chekpoints(checkpoint_dir, best_eval_epoch)
-    write_result_to_tsv(output_tsv, tst_log, opt.cvNo)
+    logger.info(str('[Tst] WF1-result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1'], tst_log['WF1'])))
+    logger.info(str('\n{}'.format(tst_log['cm'])))
 
-def write_result_to_tsv(file_path, tst_log, cvNo):
-    # 使用fcntl对文件加锁,避免多个不同进程同时操作同一个文件
-    f_in = open(file_path)
-    fcntl.flock(f_in.fileno(), fcntl.LOCK_EX) # 加锁
-    content = f_in.readlines()
-    if len(content) != 12:
-        content += ['\n'] * (12-len(content))
-    content[cvNo-1] = 'CV{}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(cvNo, tst_log['WA'], tst_log['UA'], tst_log['F1'])
-    f_out = open(file_path, 'w')
-    f_out.writelines(content)
-    f_out.close()
-    f_in.close()                              # 释放锁
+    # print best F1 eval result
+    logger.info('Loading best F1 model found on val set: epoch-%d' % best_eval_f1_epoch)
+    checkpoint_path = os.path.join(checkpoint_dir, 'model_step_{}.pt'.format(best_eval_f1_epoch))
+    if not os.path.exists(checkpoint_path):
+        logger.error("Load checkpoint error, not exist such file")
+        exit(0)
+    ck = torch.load(checkpoint_path)
+    model.load_state_dict(ck)
+    val_log = evaluation(model, val_db, save_dir=log_dir, set_name='val')
+    logger.info(str('[Val] F1-result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (val_log['WA'], val_log['UA'], val_log['F1'], val_log['WF1'])))
+    logger.info(str('\n{}'.format(val_log['cm'])))
+    tst_log = evaluation(model, tst_db, save_dir=log_dir, set_name='test')
+    logger.info(str('[Tst] F1-result WA: %.4f UAR %.4f F1 %.4f WF1 %.4f' % (tst_log['WA'], tst_log['UA'], tst_log['F1'], tst_log['WF1'])))
+    logger.info(str('\n{}'.format(tst_log['cm'])))
+
+    clean_chekpoints(checkpoint_dir, [best_eval_wf1_epoch, best_eval_f1_epoch])
+
 
 @torch.no_grad()
 def evaluation(model, loader, set_name='val', save_dir=None):
@@ -216,15 +231,12 @@ def evaluation(model, loader, set_name='val', save_dir=None):
         acc = accuracy_score(total_label, total_pred)
         uar = recall_score(total_label, total_pred, average='macro')
         f1 = f1_score(total_label, total_pred, average='macro')
+        wf1 = f1_score(total_label, total_pred, average='weighted')
         cm = confusion_matrix(total_label, total_pred)
     except:
-        acc, uar, f1, cm = 0,0,0,0
+        acc, uar, f1, wf1, cm = 0,0,0,0, 0
     model.train()
-    # save test results
-    if save_dir is not None:
-        np.save(os.path.join(save_dir, '{}_pred.npy'.format(set_name)), total_pred)
-        np.save(os.path.join(save_dir, '{}_label.npy'.format(set_name)), total_label)
-    return {'loss': avg_loss,  'WA': acc,  'UA': uar, 'F1': f1, 'cm':cm}
+    return {'loss': avg_loss,  'WA': acc,  'UA': uar, 'F1': f1, 'WF1': wf1, 'cm':cm}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -77,10 +77,9 @@ testVid
 torch=1.0 所以需要用vlbert这个环境，而不能用 talknet torch=1.9的环境
 
 ### 对话中的情感 --特征
-先把特征都平均得到句子级别的特征，然后跑一下，dialogRNN 试试
+每个模态着两组特征，一组基于原始的时序特征，一组基于
 text:
-    sent_cls_bert_base_chinese
-    sent_cls_bert_base_chinese4chmed
+    sent_avg_robert_wwm_base_chinese
     sent_cls_robert_wwm_base_chinese4chmed
 speech:
     IS10_norm 
