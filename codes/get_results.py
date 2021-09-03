@@ -5,6 +5,10 @@ import datetime
 import collections
 from glob import glob
 
+def write_file(filepath, lines):
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.writelines(lines)
+
 def get_latest_result(path, type_eval):
     logs = os.listdir(path)
     logs = list(filter(lambda x: True if x.startswith('none_') else False, logs))
@@ -78,33 +82,61 @@ def analysis_f1_log(log, type_eval='F1'):
             raise ValueError('Can not find correct pattern in {}'.format(line))
     return val_log, test_log
 
+def remove_bad_results(all_val_results, all_tst_results, type_eval):
+    if type_eval == 'WF1':
+        type_eval_index = 3
+    else:
+        type_eval_index = 2
+    eval_metrics = [v[type_eval_index] for v in all_val_results]
+    min_index = np.argmin(eval_metrics)
+    all_val_results.pop(min_index)
+    all_tst_results.pop(min_index)
+    return all_val_results, all_tst_results
+
+
 if __name__ == '__main__':
-    output_name = 'V_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh256_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese256_F256,128'
     result_dir = '/data9/memoconv/results'
     model_name = 'utt_baseline/early_fusion_multi'
-    log_dirs = glob(os.path.join(result_dir, model_name, output_name + '_run*', 'log'))
-    print(log_dirs)
-    print(output_name)
-
-    for type_eval in ['WF1', 'F1']:
-        print('--------- {} ---------------'.format(type_eval))
-        all_val_results = []
-        all_tst_results = []
-        for log_dir in log_dirs:
-            val_log, test_log = get_latest_result(log_dir, type_eval)
-            val_results = [val_log['WA'], val_log['UAR'], val_log['F1'], val_log['WF1']]
-            test_results = [test_log['WA'], test_log['UAR'], test_log['F1'], test_log['WF1']]
-            all_val_results.append(val_results)
-            all_tst_results.append(test_results)
-        print('Validation')
-        avg_all_val_results = np.mean(all_val_results, axis=0)
-        print('\t'.join( ['{:.4f}'.format(v) for v in avg_all_val_results]))
-        print('\t'.join( ['{:.4f}'.format(v) for v in all_val_results[0]]))
-        print('\t'.join( ['{:.4f}'.format(v) for v in all_val_results[1]]))
-        print('\t'.join( ['{:.4f}'.format(v) for v in all_val_results[2]]))
-        print('Testing')
-        avg_all_tst_results = np.mean(all_tst_results, axis=0)
-        print('\t'.join( ['{:.4f}'.format(v) for v in avg_all_tst_results]))
-        print('\t'.join( ['{:.4f}'.format(v) for v in all_tst_results[0]]))
-        print('\t'.join( ['{:.4f}'.format(v) for v in all_tst_results[1]]))
-        print('\t'.join( ['{:.4f}'.format(v) for v in all_tst_results[2]]))
+    ft_types = {
+        'speech': 'sent_avg_wav2vec_zh',
+        'text': 'sent_avg_affectdenseface',
+        'visual': 'sent_avg_robert_base_wwm_chinese',
+    }
+    output_names = [
+        'A_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh256_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese256_F256,128',
+        'V_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh256_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese256_F256,128',
+        'L_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh256_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese256_F256,128',
+        'LA_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh512_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese512_F512,256',
+        'LV_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh512_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese512_F512,256',
+        'AV_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh512_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese512_F512,256',
+        'LAV_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh512_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese512_F512,256',
+    ]
+    postfix = 'lr0.0002_dp0.5_maxpool'
+    result_path = os.path.join(result_dir, 'statistic', '_'.join(ft_types.values()) + '_' + postfix)
+    all_lines = []
+    for output_name in output_names:
+        all_lines.append(output_name + '\n')
+        log_dirs = glob(os.path.join(result_dir, model_name, output_name + '_run*', 'log'))
+        for type_eval in ['WF1', 'F1']:
+            all_lines.append('--------- {} ---------------'.format(type_eval) + '\n' )
+            all_val_results = []
+            all_tst_results = []
+            for log_dir in log_dirs:
+                val_log, test_log = get_latest_result(log_dir, type_eval)
+                val_results = [val_log['WA'], val_log['UAR'], val_log['F1'], val_log['WF1']]
+                test_results = [test_log['WA'], test_log['UAR'], test_log['F1'], test_log['WF1']]
+                all_val_results.append(val_results)
+                all_tst_results.append(test_results)
+            # remove one bad result and average 
+            all_val_results, all_tst_results = remove_bad_results(all_val_results, all_tst_results, type_eval)
+            all_lines.append('Validation' + '\n')
+            avg_all_val_results = np.mean(all_val_results, axis=0)
+            all_lines.append('\t'.join( ['{:.4f}'.format(v) for v in avg_all_val_results]) + '\n')
+            all_lines.append('\t'.join( ['{:.4f}'.format(v) for v in all_val_results[0]]) + '\n')
+            all_lines.append('\t'.join( ['{:.4f}'.format(v) for v in all_val_results[1]]) + '\n')
+            all_lines.append('Testing' + '\n')
+            avg_all_tst_results = np.mean(all_tst_results, axis=0)
+            all_lines.append('\t'.join( ['{:.4f}'.format(v) for v in avg_all_tst_results]) + '\n')
+            all_lines.append('\t'.join( ['{:.4f}'.format(v) for v in all_tst_results[0]]) + '\n')
+            all_lines.append('\t'.join( ['{:.4f}'.format(v) for v in all_tst_results[1]]) + '\n')
+    write_file(result_path, all_lines)

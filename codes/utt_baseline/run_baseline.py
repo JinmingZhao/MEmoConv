@@ -56,10 +56,11 @@ def main(opt):
     ## for building the basic paths
     output_dir = join(config.result_dir,  opt.model_name) # get logger path
         # for testing the parameters of the model
-    setting_name = '{}_lr{}_dp{}_bn{}_A{}{}_V{}{}_L{}{}_F{}_run{}_{}'.format(opt.modality, opt.learning_rate, opt.dropout_rate, opt.bn, \
-        opt.a_ft_type, opt.a_hidden_size, opt.v_ft_type, opt.v_hidden_size, opt.l_ft_type, opt.l_hidden_size, \
-        opt.mid_fusion_layers, opt.run_idx, opt.postfix)
-
+    setting_name = '{}_lr{}_dp{}_bn{}_A{}{}{}_V{}{}{}_L{}{}_F{}_run{}_{}'.format(opt.modality, opt.learning_rate, opt.dropout_rate, opt.bn, \
+                                    opt.a_ft_type, opt.a_hidden_size, opt.a_embd_method, \
+                                    opt.v_ft_type, opt.v_hidden_size, opt.v_embd_method, \
+                                    opt.l_ft_type, opt.l_hidden_size, \
+                                    opt.mid_fusion_layers, opt.run_idx, opt.postfix)
     output_config = join(output_dir, setting_name, 'config.json')
     output_tsv = join(output_dir, setting_name, 'result.tsv')
     if 'iemocap' in opt.dataset_mode:
@@ -286,7 +287,8 @@ if __name__ == '__main__':
     parser.add_argument('--max_text_tokens', type=int, default=20)
     parser.add_argument('--max_acoustic_tokens', type=int, default=128)
     parser.add_argument('--max_visual_tokens', type=int, default=64)
-    parser.add_argument('--v3d_embd_method', type=str, default='last')
+    parser.add_argument('--a_embd_method', type=str, default='maxpool')
+    parser.add_argument('--v_embd_method', type=str, default='maxpool')
 
     parser.add_argument('--postfix', required=True, default='None',
                         help='postfix for the output dir')
