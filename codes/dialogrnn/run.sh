@@ -40,7 +40,6 @@ do
     done
 done
 
-
 # 类别同样不均衡，按照Meld的setting跑 python train_meld.py --active-listener --class-weight --residual --classify sentiment
 # attention = 'general'
 # class_weight = False

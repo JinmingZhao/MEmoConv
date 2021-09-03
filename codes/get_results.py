@@ -96,22 +96,22 @@ def remove_bad_results(all_val_results, all_tst_results, type_eval):
 
 if __name__ == '__main__':
     result_dir = '/data9/memoconv/results'
-    model_name = 'utt_baseline/early_fusion_multi'
+    model_name = 'dialogrnn'
     ft_types = {
-        'speech': 'sent_avg_wav2vec_zh',
-        'text': 'sent_avg_affectdenseface',
-        'visual': 'sent_avg_robert_base_wwm_chinese',
+        'speech': 'sent_wav2vec_zh2chmed2e5last',
+        'visual': 'sent_avg_affectdenseface',
+        'text': 'sent_avg_robert_base_wwm_chinese',
     }
     output_names = [
-        'A_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh256_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese256_F256,128',
-        'V_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh256_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese256_F256,128',
-        'L_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh256_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese256_F256,128',
-        'LA_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh512_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese512_F512,256',
-        'LV_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh512_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese512_F512,256',
-        'AV_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh512_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese512_F512,256',
-        'LAV_lr0.0002_dp0.5_bnFalse_Asent_avg_wav2vec_zh512_Vsent_avg_affectdenseface256_Lsent_avg_robert_base_wwm_chinese512_F512,256',
+        'Dlgrnn_A_G256P256E128H128A128_dp0.1_lr0.0005_Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_avg_robert_base_wwm_chinese_class_weight_inputproj',
+        'Dlgrnn_V_G256P256E128H128A128_dp0.1_lr0.0005_Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_avg_robert_base_wwm_chinese_class_weight_inputproj',
+        'Dlgrnn_L_G256P256E128H128A128_dp0.1_lr0.0005_Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_avg_robert_base_wwm_chinese_class_weight_inputproj',
+        'Dlgrnn_LA_G512P512E128H128A128_dp0.1_lr0.0005_Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_avg_robert_base_wwm_chinese_class_weight_inputproj',
+        'Dlgrnn_LV_G512P512E128H128A128_dp0.1_lr0.0005_Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_avg_robert_base_wwm_chinese_class_weight_inputproj',
+        'Dlgrnn_AV_G512P512E128H128A128_dp0.1_lr0.0005_Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_avg_robert_base_wwm_chinese_class_weight_inputproj',
+        'Dlgrnn_LAV_G512P512E128H128A128_dp0.1_lr0.0005_Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_avg_robert_base_wwm_chinese_class_weight_inputproj',
     ]
-    postfix = 'lr0.0002_dp0.5_maxpool'
+    postfix = 'lr0.0003_dp0.1_dialogrnn'
     result_path = os.path.join(result_dir, 'statistic', '_'.join(ft_types.values()) + '_' + postfix)
     all_lines = []
     for output_name in output_names:
