@@ -32,8 +32,8 @@ def analysis_wf1_log(log, type_eval='WF1'):
         if 'Val' in line:
             WA = float(line[line.find('WA:')+3: line.find('UAR')].strip())
             UAR = float(line[line.find('UAR')+3: line.find(' F1')].strip())
-            F1 = float(line[line.find(' F1')+3: line.find('WF1 ')].strip())
-            WF1 = float(line[line.find('WF1 ')+4:].strip())
+            F1 = float(line[line.find(' F1 ')+4: line.find(' WF1 ')].strip())
+            WF1 = float(line[line.find(' WF1 ')+5:].strip())
             val_log['WA'] = WA
             val_log['UAR'] = UAR
             val_log['F1'] = F1
@@ -41,12 +41,12 @@ def analysis_wf1_log(log, type_eval='WF1'):
         elif 'Tst' in line:
             WA = float(line[line.find('WA:')+3: line.find('UAR')].strip())
             UAR = float(line[line.find('UAR')+3: line.find(' F1')].strip())
-            F1 = float(line[line.find(' F1')+3: line.find('WF1 ')].strip())
-            WF1 = float(line[line.find('WF1 ')+4:].strip())
+            F1 = float(line[line.find(' F1 ')+4: line.find(' WF1 ')].strip())
+            WF1 = float(line[line.find('WF1 ')+5:].strip())
             test_log['WA'] = WA
             test_log['UAR'] = UAR
             test_log['F1'] = F1
-            test_log['WF1'] = F1
+            test_log['WF1'] = WF1
         else:
             raise ValueError('Can not find correct pattern in {}'.format(line))
     return val_log, test_log
@@ -63,8 +63,8 @@ def analysis_f1_log(log, type_eval='F1'):
         if 'Val' in line:
             WA = float(line[line.find('WA:')+3: line.find('UAR')].strip())
             UAR = float(line[line.find('UAR')+3: line.find(' F1 ')].strip())
-            F1 = float(line[line.find(' F1 ')+4: line.find('WF1')].strip())
-            WF1 = float(line[line.find('WF1')+4:].strip())
+            F1 = float(line[line.find(' F1 ')+4: line.find(' WF1')].strip())
+            WF1 = float(line[line.find(' WF1')+5:].strip())
             val_log['WA'] = WA
             val_log['UAR'] = UAR
             val_log['F1'] = F1
@@ -72,12 +72,12 @@ def analysis_f1_log(log, type_eval='F1'):
         elif 'Tst' in line:
             WA = float(line[line.find('WA:')+3: line.find('UAR')].strip())
             UAR = float(line[line.find('UAR')+3: line.find(' F1 ')].strip())
-            F1 = float(line[line.find(' F1 ')+4: line.find('WF1')].strip())
-            WF1 = float(line[line.find('WF1')+4:].strip())
+            F1 = float(line[line.find(' F1 ')+4: line.find(' WF1')].strip())
+            WF1 = float(line[line.find(' WF1 ')+5:].strip())
             test_log['WA'] = WA
             test_log['UAR'] = UAR
             test_log['F1'] = F1
-            test_log['WF1'] = F1
+            test_log['WF1'] = WF1
         else:
             raise ValueError('Can not find correct pattern in {}'.format(line))
     return val_log, test_log
