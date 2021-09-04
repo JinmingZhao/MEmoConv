@@ -95,11 +95,11 @@ def train_or_eval_model(model, loss_function, dataloader, optimizer=None, train=
     preds  = np.concatenate(preds)
     labels = np.concatenate(labels)
     masks  = np.concatenate(masks)
-    avg_loss = round(np.sum(losses)/np.sum(masks),4)
-    avg_accuracy = round(accuracy_score(labels,preds,sample_weight=masks), 2)
-    avg_uar = round(recall_score(labels,preds,sample_weight=masks,average='macro'), 2)
-    avg_fscore = round(f1_score(labels,preds,sample_weight=masks,average='macro'), 2)
-    avg_wfscore = round(f1_score(labels,preds, sample_weight=masks, average='weighted'), 2)
+    avg_loss = np.sum(losses)/np.sum(masks)
+    avg_accuracy = accuracy_score(labels,preds,sample_weight=masks)
+    avg_uar = recall_score(labels,preds,sample_weight=masks,average='macro')
+    avg_fscore = f1_score(labels,preds,sample_weight=masks,average='macro')
+    avg_wfscore = f1_score(labels,preds, sample_weight=masks, average='weighted')
     cm = confusion_matrix(labels, preds, sample_weight=masks)
     val_log = {'WF1':avg_wfscore, 'F1':avg_fscore, 'UA':avg_uar, 'WA':avg_accuracy, 'loss':avg_loss, 'cm': cm}
     return val_log, labels, preds, masks,[alphas, alphas_f, alphas_b, vids]
@@ -168,6 +168,9 @@ if __name__ == '__main__':
     parser.add_argument('--path', default='AIS10_norm_Vsent_avg_denseface_Lsent_cls_robert_wwm_base_chinese4chmed', help='modals to fusion')
     parser.add_argument('--ft_dir', default='/data9/memoconv/modality_fts/dialogrnn', help='modals to fusion')
     parser.add_argument('--result_dir', default='/data9/memoconv/results/dialogrnn', help='modals to fusion')
+    parser.add_argument('--best_eval_wf1_epoch',  type=int, default=0, help='best MF1 evaluation epoch')
+    parser.add_argument('--best_eval_f1_epoch',  type=int, default=0, help='best MF1 evaluation epoch')
+    parser.add_argument('--is_test', action='store_true', default=False)
     args = parser.parse_args()
 
     output_name_ =  'Dlgrnn_' + args.modals + '_G{}P{}E{}H{}A{}_dp{}_lr{}_'.format(args.global_dim, args.person_dim, args.emotion_dim, \
@@ -201,69 +204,75 @@ if __name__ == '__main__':
                     dropout=args.dropout,
                     use_input_project=args.use_input_project)
     model.cuda()
-    # 计算训练集合中各个类别所占的比例
-    loss_weights = torch.FloatTensor([1/0.093303,  1/0.409135, 1/0.156883, 1/0.065703, 1/0.218971, 1/0.016067, 1/0.039938])
-    if args.class_weight:
-        loss_function  = MaskedNLLLoss(loss_weights.cuda() if is_cuda else loss_weights)
-    else:
-        loss_function = MaskedNLLLoss()
-    optimizer = optim.Adam(model.parameters(),
-                        lr=args.lr, weight_decay=args.l2)
-    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
-    train_loader, valid_loader, test_loader = get_chmed_loaders(root_dir=args.ft_dir, path=args.path,
-                                                            batch_size=args.batch_size, num_workers=0)
-    best_eval_f1 = 0              # record the best eval F1
-    best_eval_wf1 = 0              # record the best eval WF1
-    best_eval_f1_epoch = -1           # record the best eval F1 epoch
-    best_eval_wf1_epoch = -1           # record the best eval WF1 epoch
-    patience = args.patience
+    if not args.is_test:
+        logger.info('Start training----')
+        # 计算训练集合中各个类别所占的比例
+        loss_weights = torch.FloatTensor([1/0.093303,  1/0.409135, 1/0.156883, 1/0.065703, 1/0.218971, 1/0.016067, 1/0.039938])
+        if args.class_weight:
+            loss_function  = MaskedNLLLoss(loss_weights.cuda() if is_cuda else loss_weights)
+        else:
+            loss_function = MaskedNLLLoss()
+        optimizer = optim.Adam(model.parameters(),
+                            lr=args.lr, weight_decay=args.l2)
+        scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
+        train_loader, valid_loader, test_loader = get_chmed_loaders(root_dir=args.ft_dir, path=args.path,
+                                                                batch_size=args.batch_size, num_workers=0)
+        best_eval_f1 = 0              # record the best eval F1
+        best_eval_wf1 = 0              # record the best eval WF1
+        best_eval_f1_epoch = -1           # record the best eval F1 epoch
+        best_eval_wf1_epoch = -1           # record the best eval WF1 epoch
+        patience = args.patience
 
-    for epoch in range(args.max_epoch):
-        start_time = time.time()
-        train_log, _,_,_,_= train_or_eval_model(model, loss_function,
-                                               train_loader, optimizer, True)        
-        # for evaluation
-        logger.info("============ Evaluation Epoch {} ============".format(epoch))
-        logger.info("Cur learning rate {}".format(optimizer.state_dict()['param_groups'][0]['lr']))
-        logger.info(str("[Training] Loss: {:.2f}".format(train_log['loss']) +
-                    "\t WA: {:.2f},".format(train_log['WA']*100) + 
-                    "\t UA: {:.2f},".format(train_log['UA']*100) + 
-                    "\t F1: {:.2f},".format(train_log['F1']*100) +
-                    "\t WF1: {:.2f},".format(train_log['WF1']*100)))
-        val_log, _,_,_,_= train_or_eval_model(model, loss_function, valid_loader)
-        logger.info(str("[Validation] Loss: {:.2f}".format(val_log['loss']) +
-                    "\t WA: {:.2f},".format(val_log['WA']*100) + 
-                    "\t UA: {:.2f},".format(val_log['UA']*100) + 
-                    "\t F1: {:.2f},".format(val_log['F1']*100) +
-                    "\t WF1: {:.2f},".format(val_log['WF1']*100)))
-        test_log, test_label, test_pred, test_mask, attentions = train_or_eval_model(model, loss_function, test_loader)
-        logger.info(str("[Validation] Loss: {:.2f}".format(test_log['loss']) +
-                    "\t WA: {:.2f},".format(test_log['WA']*100) + 
-                    "\t UA: {:.2f},".format(test_log['UA']*100) + 
-                    "\t F1: {:.2f},".format(test_log['F1']*100) +
-                    "\t WF1: {:.2f},".format(test_log['WF1']*100)))
-        print('Save model at {} epoch'.format(epoch))
-        model_saver.save(model, epoch)
-        # update the current best model based on validation results
-        if val_log['WF1'] > best_eval_wf1:
-                best_eval_wf1_epoch = epoch
-                best_eval_wf1 = val_log['WF1']
+        for epoch in range(args.max_epoch):
+            start_time = time.time()
+            train_log, _,_,_,_= train_or_eval_model(model, loss_function,
+                                                train_loader, optimizer, True)        
+            # for evaluation
+            logger.info("============ Evaluation Epoch {} ============".format(epoch))
+            logger.info("Cur learning rate {}".format(optimizer.state_dict()['param_groups'][0]['lr']))
+            logger.info(str("[Training] Loss: {:.4f}".format(train_log['loss']) +
+                        "\t WA: {:.4f},".format(train_log['WA']) + 
+                        "\t UA: {:.4f},".format(train_log['UA']) + 
+                        "\t F1: {:.4f},".format(train_log['F1']) +
+                        "\t WF1: {:.4f},".format(train_log['WF1'])))
+            val_log, _,_,_,_= train_or_eval_model(model, loss_function, valid_loader)
+            logger.info(str("[Validation] Loss: {:.4f}".format(val_log['loss']) +
+                        "\t WA: {:.4f},".format(val_log['WA']) + 
+                        "\t UA: {:.4f},".format(val_log['UA']) + 
+                        "\t F1: {:.4f},".format(val_log['F1']) +
+                        "\t WF1: {:.4f},".format(val_log['WF1'])))
+            test_log, test_label, test_pred, test_mask, attentions = train_or_eval_model(model, loss_function, test_loader)
+            logger.info(str("[Validation] Loss: {:.4f}".format(test_log['loss']) +
+                        "\t WA: {:.4f},".format(test_log['WA']) + 
+                        "\t UA: {:.4f},".format(test_log['UA']) + 
+                        "\t F1: {:.4f},".format(test_log['F1']) +
+                        "\t WF1: {:.4f},".format(test_log['WF1'])))
+            print('Save model at {} epoch'.format(epoch))
+            model_saver.save(model, epoch)
+            # update the current best model based on validation results
+            if val_log['WF1'] > best_eval_wf1:
+                    best_eval_wf1_epoch = epoch
+                    best_eval_wf1 = val_log['WF1']
+                    # reset to init
+                    patience = args.patience
+            
+            if val_log['F1'] > best_eval_f1:
+                best_eval_f1_epoch = epoch
+                best_eval_f1 = val_log['F1']
                 # reset to init
                 patience = args.patience
-        
-        if val_log['F1'] > best_eval_f1:
-            best_eval_f1_epoch = epoch
-            best_eval_f1 = val_log['F1']
-            # reset to init
-            patience = args.patience
 
-        # for early stop
-        if patience <= 0:            
-            break
-        else:
-            patience -= 1
-        # update the learning rate
-        scheduler.step()
+            # for early stop
+            if patience <= 0:            
+                break
+            else:
+                patience -= 1
+            # update the learning rate
+            scheduler.step()
+    else:
+        logger.info('In the evluation MODE and given the best model epoch')
+        best_eval_wf1_epoch = args.best_eval_wf1_epoch
+        best_eval_f1_epoch = args.best_eval_f1_epoch
         
     # print best eval result
     logger.info('Loading best WF1 model found on val set: epoch-%d' % best_eval_wf1_epoch)

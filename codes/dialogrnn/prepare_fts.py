@@ -90,12 +90,14 @@ def get_set_vids(train_movies_filepath, all_dialog2utts):
 
 if __name__ == '__main__':
     # export PYTHONPATH=/data9/MEmoConv
-    modality_ft_type = {'speech':'sent_wav2vec_zh2chmed2e5last', 'visual':'sent_avg_affectdenseface', 'text':'sent_cls_robert_wwm_base_chinese4chmed'}
+    # modality_ft_type = {'speech':'IS10_norm', 'visual':'sent_avg_affectdenseface', 'text':'sent_cls_robert_wwm_base_chinese4chmed'}
+    modality_ft_type = {'speech':'sent_wav2vec_zh2chmed2e5last', 'visual':'sent_avg_affectdenseface', 'text':'sent_avg_robert_base_wwm_chinese'}
+    # modality_ft_type = {'speech':'sent_wav2vec_zh2chmed2e5last', 'visual':'sent_avg_affectdenseface', 'text':'sent_cls_robert_wwm_base_chinese4chmed'}
     # modality_ft_type = {'speech':'sent_avg_wav2vec_zh', 'visual':'sent_avg_affectdenseface', 'text':'sent_avg_robert_base_wwm_chinese'}
     # modality_ft_type = {'speech':'wav2vec_zh', 'visual':'affectdenseface', 'text':'robert_base_wwm_chinese'}
     feature_root_dir = '/data9/memoconv/modality_fts'
     output_root_dir = '/data9/memoconv/modality_fts/dialogrnn'
-    feature_save_path = os.path.join(output_root_dir, 'A{}_V{}_L{}.pkl'.format(modality_ft_type['speech'], 
+    feature_save_path = os.path.join(output_root_dir, 'A{}-V{}-L{}.pkl'.format(modality_ft_type['speech'], 
                                                             modality_ft_type['visual'], modality_ft_type['text']))
     all_feat_info = []
     all_movie2dialogs = collections.OrderedDict()

@@ -3,7 +3,7 @@ set -e
 gpu=$1
 
 # for modality in A V L LA LV AV LAV;
-for modality in A V L LA;
+for modality in A V;
 do
     for run_idx in 1 2 3;
     do
