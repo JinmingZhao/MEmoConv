@@ -14,9 +14,9 @@ class Wav2VecDNNModel(BaseModel):
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
         parser.add_argument('--output_dim', type=int, default=7)
-        parser.add_argument('--cls_layers', type=str, default='128,128')
+        parser.add_argument('--cls_layers', type=str, default=None)
         parser.add_argument('--hidden_size', type=int, default=128)
-        parser.add_argument('--embd_method', type=str, default='max')
+        parser.add_argument('--embd_method', type=str, default='last')
         parser.add_argument('--bidirection', action='store_true')
         parser.add_argument('--wav2vec_name', type=str, default='facebook/wav2vec2-base', help='which cross validation set')
         return parser
@@ -36,7 +36,11 @@ class Wav2VecDNNModel(BaseModel):
             feature_dim = 1024
         else:
             feature_dim = 768
-        self.netC = FcClassifier(feature_dim, [int(l) for l in opt.cls_layers.split(',')], opt.output_dim, dropout=0.3)
+        if opt.cls_layers is not None:
+            cls_layers = [int(l) for l in opt.cls_layers.split(',')]
+        else:
+            cls_layers = []
+        self.netC = FcClassifier(feature_dim, cls_layers, opt.output_dim, dropout=0.3)
         
         if self.isTrain:
             self.criterion_ce = torch.nn.CrossEntropyLoss()

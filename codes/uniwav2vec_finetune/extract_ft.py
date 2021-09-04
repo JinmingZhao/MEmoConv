@@ -34,12 +34,15 @@ def inference(model, val_iter, ft_save_path):
     average = 'macro' # 'weighted'
     uar = recall_score(total_label, total_pred, average=average)
     f1 = f1_score(total_label, total_pred, average=average)
+    wf1 = f1_score(total_label, total_pred, average='weighted')
     cm = confusion_matrix(total_label, total_pred)    
-    return acc, uar, f1, cm
+    return acc, uar, f1, wf1, cm
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()                        # get training options
-    model_name = '_'.join([opt.model, opt.dataset_mode, opt.wav2vec_name.replace('/', '_'), str(opt.lr)], str(opt.cls_layes))    # get logger suffix
+    model_name = '_'.join([opt.model, opt.dataset_mode, opt.wav2vec_name.replace('/', '_'), str(opt.lr)])    # get logger suffix
+    if opt.cls_layers is not None:
+        model_name += opt.cls_layers
     output_dir = os.path.join(opt.output_dir, model_name)
     make_path(output_dir)
     logger_dir = os.path.join(output_dir, 'log') # get logger path
@@ -60,20 +63,21 @@ if __name__ == '__main__':
     logger.info('Loading best model found on val set: epoch-%d' % best_eval_epoch)
     model.load_networks(checkpoint_dir, best_eval_epoch)
 
-    # # infer trn set
-    ft_save_path = os.path.join(output_dir, 'epoch{}_train_ft.npy'.format(best_eval_epoch))
-    acc, uar, f1, cm = inference(model, dataset, ft_save_path)
-    logger.info('Trn result of epoch %d / %d acc %.4f uar %.4f f1 %.4f' % (best_eval_epoch, opt.niter + opt.niter_decay, acc, uar, f1))
-    logger.info('\n{}'.format(cm))
-
     # # infer val set
     ft_save_path = os.path.join(output_dir, 'epoch{}_val_ft.npy'.format(best_eval_epoch))
-    acc, uar, f1, cm = inference(model, val_dataset, ft_save_path)
-    logger.info('Val result of epoch %d / %d acc %.4f uar %.4f f1 %.4f' % (best_eval_epoch, opt.niter + opt.niter_decay, acc, uar, f1))
+    acc, uar, f1, wf1, cm = inference(model, val_dataset, ft_save_path)
+    logger.info('Val result of epoch %d / %d acc %.4f uar %.4f f1 %.4f wf1  %.4f' % (best_eval_epoch, opt.niter + opt.niter_decay, acc, uar, f1, wf1))
     logger.info('\n{}'.format(cm))
 
     # infer tst set
     ft_save_path = os.path.join(output_dir, 'epoch{}_test_ft.npy'.format(best_eval_epoch))
-    _acc, _uar, _f1, cm = inference(model, tst_dataset, ft_save_path)
-    logger.info('Tst result of epoch %d / %d acc %.4f uar %.4f f1 %.4f' % (best_eval_epoch, opt.niter + opt.niter_decay, _acc, _uar, _f1))
+    _acc, _uar, _f1, wf1, cm = inference(model, tst_dataset, ft_save_path)
+    logger.info('Tst result of epoch %d / %d acc %.4f uar %.4f f1 %.4f wf1  %.4f' % (best_eval_epoch, opt.niter + opt.niter_decay, _acc, _uar, _f1, wf1))
     logger.info('\n{}'.format(cm))
+
+    # # infer trn set
+    ft_save_path = os.path.join(output_dir, 'epoch{}_train_ft.npy'.format(best_eval_epoch))
+    acc, uar, f1, wf1, cm = inference(model, dataset, ft_save_path)
+    logger.info('Trn result of epoch %d / %d acc %.4f uar %.4f f1 %.4f wf1  %.4f' % (best_eval_epoch, opt.niter + opt.niter_decay, acc, uar, f1, wf1))
+    logger.info('\n{}'.format(cm))
+

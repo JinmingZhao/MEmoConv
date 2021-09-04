@@ -111,7 +111,7 @@ if __name__ == '__main__':
         'Dlggcn_AV_BaseLSTME180WP10WF10dp0.4_lr0.0003__Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
         'Dlggcn_LAV_BaseLSTME180WP10WF10dp0.4_lr0.0003__Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj'
     ]
-    postfix = 'lr0.0003_dp0.4_dialoggcn'
+    postfix = 'final_dialoggcn_finetuned_FT_lr0.0003_dp0.4'
     result_path = os.path.join(result_dir, 'statistic', '_'.join(ft_types.values()) + '_' + postfix)
     all_lines = []
     for output_name in output_names:
