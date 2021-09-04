@@ -204,19 +204,23 @@ if __name__ == '__main__':
                     dropout=args.dropout,
                     use_input_project=args.use_input_project)
     model.cuda()
+
+    logger.info('Loading the dataset.....')
+    train_loader, valid_loader, test_loader = get_chmed_loaders(root_dir=args.ft_dir, path=args.path,
+                                                                batch_size=args.batch_size, num_workers=0)
+
+    # 计算训练集合中各个类别所占的比例
+    loss_weights = torch.FloatTensor([1/0.093303,  1/0.409135, 1/0.156883, 1/0.065703, 1/0.218971, 1/0.016067, 1/0.039938])
+    if args.class_weight:
+        loss_function  = MaskedNLLLoss(loss_weights.cuda() if is_cuda else loss_weights)
+    else:
+        loss_function = MaskedNLLLoss()
+        
     if not args.is_test:
         logger.info('Start training----')
-        # 计算训练集合中各个类别所占的比例
-        loss_weights = torch.FloatTensor([1/0.093303,  1/0.409135, 1/0.156883, 1/0.065703, 1/0.218971, 1/0.016067, 1/0.039938])
-        if args.class_weight:
-            loss_function  = MaskedNLLLoss(loss_weights.cuda() if is_cuda else loss_weights)
-        else:
-            loss_function = MaskedNLLLoss()
         optimizer = optim.Adam(model.parameters(),
                             lr=args.lr, weight_decay=args.l2)
         scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
-        train_loader, valid_loader, test_loader = get_chmed_loaders(root_dir=args.ft_dir, path=args.path,
-                                                                batch_size=args.batch_size, num_workers=0)
         best_eval_f1 = 0              # record the best eval F1
         best_eval_wf1 = 0              # record the best eval WF1
         best_eval_f1_epoch = -1           # record the best eval F1 epoch

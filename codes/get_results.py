@@ -31,7 +31,7 @@ def analysis_wf1_log(log, type_eval='WF1'):
     for line in res_lines:
         if 'Val' in line:
             WA = float(line[line.find('WA:')+3: line.find('UAR')].strip())
-            UAR = float(line[line.find('UAR')+3: line.find(' F1')].strip())
+            UAR = float(line[line.find('UAR')+3: line.find(' F1 ')].strip())
             F1 = float(line[line.find(' F1 ')+4: line.find(' WF1 ')].strip())
             WF1 = float(line[line.find(' WF1 ')+5:].strip())
             val_log['WA'] = WA
@@ -40,9 +40,9 @@ def analysis_wf1_log(log, type_eval='WF1'):
             val_log['WF1'] = WF1
         elif 'Tst' in line:
             WA = float(line[line.find('WA:')+3: line.find('UAR')].strip())
-            UAR = float(line[line.find('UAR')+3: line.find(' F1')].strip())
+            UAR = float(line[line.find('UAR')+3: line.find(' F1 ')].strip())
             F1 = float(line[line.find(' F1 ')+4: line.find(' WF1 ')].strip())
-            WF1 = float(line[line.find('WF1 ')+5:].strip())
+            WF1 = float(line[line.find(' WF1 ')+5:].strip())
             test_log['WA'] = WA
             test_log['UAR'] = UAR
             test_log['F1'] = F1
@@ -63,8 +63,8 @@ def analysis_f1_log(log, type_eval='F1'):
         if 'Val' in line:
             WA = float(line[line.find('WA:')+3: line.find('UAR')].strip())
             UAR = float(line[line.find('UAR')+3: line.find(' F1 ')].strip())
-            F1 = float(line[line.find(' F1 ')+4: line.find(' WF1')].strip())
-            WF1 = float(line[line.find(' WF1')+5:].strip())
+            F1 = float(line[line.find(' F1 ')+4: line.find(' WF1 ')].strip())
+            WF1 = float(line[line.find(' WF1 ')+5:].strip())
             val_log['WA'] = WA
             val_log['UAR'] = UAR
             val_log['F1'] = F1
@@ -72,7 +72,7 @@ def analysis_f1_log(log, type_eval='F1'):
         elif 'Tst' in line:
             WA = float(line[line.find('WA:')+3: line.find('UAR')].strip())
             UAR = float(line[line.find('UAR')+3: line.find(' F1 ')].strip())
-            F1 = float(line[line.find(' F1 ')+4: line.find(' WF1')].strip())
+            F1 = float(line[line.find(' F1 ')+4: line.find(' WF1 ')].strip())
             WF1 = float(line[line.find(' WF1 ')+5:].strip())
             test_log['WA'] = WA
             test_log['UAR'] = UAR
@@ -98,18 +98,18 @@ if __name__ == '__main__':
     result_dir = '/data9/memoconv/results'
     model_name = 'dialoggcn'
     ft_types = {
-        'speech': 'IS10_norm',
+        'speech': 'sent_wav2vec_zh2chmed2e5last',
         'visual': 'sent_avg_affectdenseface',
         'text': 'sent_cls_robert_wwm_base_chinese4chmed',
     }
     output_names = [
-        'Dlggcn_A_BaseLSTME180WP10WF10dp0.4_lr0.0003__AIS10_norm-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
+        'Dlggcn_A_BaseLSTME180WP10WF10dp0.4_lr0.0003__Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
         'Dlggcn_V_BaseLSTME180WP10WF10dp0.4_lr0.0003__Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
         'Dlggcn_L_BaseLSTME180WP10WF10dp0.4_lr0.0003__Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
-        'Dlggcn_LA_BaseLSTME180WP10WF10dp0.4_lr0.0003__AIS10_norm-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
+        'Dlggcn_LA_BaseLSTME180WP10WF10dp0.4_lr0.0003__Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
         'Dlggcn_LV_BaseLSTME180WP10WF10dp0.4_lr0.0003__Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
-        'Dlggcn_AV_BaseLSTME180WP10WF10dp0.4_lr0.0003__AIS10_norm-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
-        'Dlggcn_LAV_BaseLSTME180WP10WF10dp0.4_lr0.0003__AIS10_norm-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj'
+        'Dlggcn_AV_BaseLSTME180WP10WF10dp0.4_lr0.0003__Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj',
+        'Dlggcn_LAV_BaseLSTME180WP10WF10dp0.4_lr0.0003__Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed_class_weight_inputproj'
     ]
     postfix = 'lr0.0003_dp0.4_dialoggcn'
     result_path = os.path.join(result_dir, 'statistic', '_'.join(ft_types.values()) + '_' + postfix)
