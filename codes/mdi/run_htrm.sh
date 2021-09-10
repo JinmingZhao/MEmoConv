@@ -1,10 +1,12 @@
-source activate mdi
+# source activate mdi
 
+export PYTHONPATH=/data9/MEmoConv
+set -e
 gpuid=$1
 result_dir=/data9/MEmoConv/memoconv/results/mdi
 feat_path=/data9/MEmoConv/memoconv/modality_fts/dialogrnn/Asent_wav2vec_zh2chmed2e5last-Vsent_avg_affectdenseface-Lsent_cls_robert_wwm_base_chinese4chmed.pkl
 
-for run_idx in 1 2 3;
+for run_idx in 1;
 do
   CUDA_VISIBLE_DEVICES=${gpuid} python run_htrm.py \
         --device ${gpuid} --run_idx ${run_idx} \
@@ -16,10 +18,9 @@ do
         --use_spk_attn --residual_spk_attn \
         --bert_path bert-base-chinese \
         --finetune_layers 4 \
-        --bert_frozen \
-        --multi_modal --mm_type ecat --modals avl \
+        --mm_type ecat --modals l \
         --local_window 3 \
-        --same_encoder --use_utt_text_features \
+        --same_encoder --bert_frozen --use_utt_text_features \
         --result_dir ${result_dir} \
         --feat_path ${feat_path}
 done

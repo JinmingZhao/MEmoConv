@@ -1,4 +1,3 @@
-from dataset import *
 import pickle
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader
@@ -6,26 +5,14 @@ import os
 import argparse
 import numpy as np
 from  transformers import BertTokenizer, AutoTokenizer
-import time
-
+import time, json
+from codes.mdi.dataset import HTRMDataset
 
 def load_vocab(dataset_name):
     speaker_vocab = pickle.load(open('../data/%s/speaker_vocab.pkl' % (dataset_name), 'rb'))
     label_vocab = pickle.load(open('../data/%s/label_vocab.pkl' % (dataset_name), 'rb'))
-    person_vec_dir = '../data/%s/person_vect.pkl' % (dataset_name)
-    # if os.path.exists(person_vec_dir):
-    #     print('Load person vec from ' + person_vec_dir)
-    #     person_vec = pickle.load(open(person_vec_dir, 'rb'))
-    # else:
-    #     print('Creating personality vectors')
-    #     person_vec = np.random.randn(len(speaker_vocab['itos']), 100)
-    #     print('Saving personality vectors to' + person_vec_dir)
-    #     with open(person_vec_dir,'wb') as f:
-    #         pickle.dump(person_vec, f, -1)
     person_vec = None
-
     return speaker_vocab, label_vocab, person_vec
-
 
 def read_datas(dataset_name, batch_size):
     # training set
@@ -52,8 +39,7 @@ def read_datas(dataset_name, batch_size):
 
     return new_train_raw, new_dev_raw, new_test_raw
 
-
-def get_HTRM_loaders_htrm(logger, dataset='MELD', batch_size=32, bert_path='bert-base-uncased'):
+def get_HTRM_loaders_htrm(logger, feat_path, dataset='MELD', batch_size=32, bert_path='bert-base-uncased'):
     if dataset == 'IEMOCAP':
         label_dict = {0: 'Happy', 1: 'Sad', 2: 'Neutral', 3: 'Angry', 4: 'Excited', 5: 'Frustrated'}
     elif dataset == 'MELD':
@@ -65,20 +51,8 @@ def get_HTRM_loaders_htrm(logger, dataset='MELD', batch_size=32, bert_path='bert
     elif dataset == 'M3ED':
         label_dict = {0: 'Happy', 1: 'Neutral', 2: 'Sad', 3: 'Disgust', 4: 'Anger', 5: 'Fear', 6: 'Surprise'}
     n_classes = len(label_dict.keys())
-    #tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     tokenizer = AutoTokenizer.from_pretrained(bert_path)
     logger.info('building datasets ' + dataset + ' ..')
-    if dataset == 'MELD':
-        path = '/data1/lyc/HTRM/data/MELD/MELD_features_raw.pkl'
-    elif dataset == 'IEMOCAP':
-        #path = '/data1/lyc/HTRM/data/IEMOCAP/IEMOCAP_features_DialogueGCN.pkl'
-        path = '/data1/lyc/HTRM/data/IEMOCAP/IEMOCAP_features.pkl'
-    elif dataset == 'DailyDialog':
-        path = '/data1/lyc/HTRM/data/DailyDialog/DailyDialog.pkl'
-    elif dataset == 'EmoryNLP':
-        path = '/data1/lyc/HTRM/data/EmoryNLP/EmoryNLP.pkl'
-    elif dataset == 'M3ED':
-        path = '/data1/lyc/HTRM_for_M3ED/data/M3ED.pkl'
 
     if 'roberta' in bert_path:
         start_tok, end_tok = '<s>', '</s>'
@@ -87,9 +61,9 @@ def get_HTRM_loaders_htrm(logger, dataset='MELD', batch_size=32, bert_path='bert
     else:
         start_tok, end_tok = '[CLS]', '[SEP]'
 
-    trainsets = HTRMDataset(path, batch_size, tokenizer, dataset=dataset, dev='train', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
-    devsets = HTRMDataset(path, batch_size, tokenizer, dataset=dataset, dev='valid', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
-    testsets = HTRMDataset(path, batch_size, tokenizer, dataset=dataset, dev='test', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
+    trainsets = HTRMDataset(feat_path, batch_size, tokenizer, dataset=dataset, dev='train', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
+    devsets = HTRMDataset(feat_path, batch_size, tokenizer, dataset=dataset, dev='valid', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
+    testsets = HTRMDataset(feat_path, batch_size, tokenizer, dataset=dataset, dev='test', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
 
     for name, dataset in zip(['Train', 'Valid', 'Test'], [trainsets, devsets, testsets]):
         logger.info('{} set: {} dialogs, {} sentences'.format(name, dataset.dialog_num, dataset.sentence_num))

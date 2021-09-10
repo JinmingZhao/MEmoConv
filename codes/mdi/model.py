@@ -442,7 +442,7 @@ class BertEncoder(nn.Module):
         self.args = args
         self.code_length = code_length
         modelConfig = AutoConfig.from_pretrained(args.bert_path)
-        if not args.use_text_features:
+        if not args.use_utt_text_features:
             self.textExtractor = AutoModel.from_pretrained(args.bert_path, config=modelConfig)
             embedding_dim = args.bert_dim
         else:
@@ -452,7 +452,7 @@ class BertEncoder(nn.Module):
         if args.bert_feature_type == 'cat':
             fc_in_dim += embedding_dim
 
-        if args.multi_modal and args.mm_type == 'ecat':
+        if len(args.modals) > 1 and args.mm_type == 'ecat':
             fc_in_dim = 0
             if 'a' in args.modals:
                 fc_in_dim += args.audio_dim
@@ -460,7 +460,7 @@ class BertEncoder(nn.Module):
                 fc_in_dim += args.visual_dim
             if 'l' in args.modals:
                 fc_in_dim += args.text_dim
-        elif args.multi_modal and args.mm_type in ['eadd', 'egate']:
+        elif len(args.modals) > 1 and args.mm_type in ['eadd', 'egate']:
             if 'a' in args.modals:
                 self.a_fc = nn.Linear(args.audio_dim, code_length)
             if 'v' in args.modals:
@@ -499,7 +499,7 @@ class BertEncoder(nn.Module):
         #tokens: input id
         #segments: zero for all sentences
         #input_masks: [1 1 1 ... 0 0 0]
-        if not self.args.use_text_features:
+        if not self.args.use_utt_text_features:
             features = []
             batch = tokens.shape[0]
             max_batch = self.args.max_bert_batch
@@ -511,7 +511,7 @@ class BertEncoder(nn.Module):
             features = texf.reshape(-1, texf.shape[-1])
 
         if not self.args.bert_wo_fc:
-            if self.args.multi_modal and self.args.mm_type == 'ecat':
+            if len(self.args.modals) > 1 and self.args.mm_type == 'ecat':
                 all_feat = []
                 if 'a' in self.args.modals:
                     all_feat.append(audf.reshape(-1, audf.shape[-1]))
@@ -520,7 +520,7 @@ class BertEncoder(nn.Module):
                 if 'l' in self.args.modals:
                     all_feat.append(features)
                 features = torch.cat(all_feat, dim=-1)
-            elif self.args.multi_modal and self.args.mm_type == 'eadd':
+            elif len(self.args.modals) > 1 and self.args.mm_type == 'eadd':
                 result_features = torch.zeros((features.shape[0], self.code_length))
                 if 'a' in self.args.modals:
                     result_features += self.a_fc(audf.reshape(-1, audf.shape[-1]))
@@ -529,7 +529,7 @@ class BertEncoder(nn.Module):
                 if 'l' in self.args.modals:
                     result_features += self.l_fc(features)
                 return self.act(result_features)
-            elif self.args.multi_modal and self.args.mm_type == 'egate':
+            elif len(self.args.modals) > 1 and self.args.mm_type == 'egate':
                 a_feat, v_feat = None, None
                 if 'a' in self.args.modals:
                     a_feat = self.a_fc(audf.reshape(-1, audf.shape[-1]))
@@ -577,9 +577,9 @@ class new_ERC_HTRM(nn.Module):
 
         self.modals = args.modals
         trm_encoder = speaker_TRM(args.trm_layers, args.utr_dim, args.trm_heads, args.trm_ff_dim,
-                                               args.dropout, entire=args.new_spk_attn, attn_type=args.attn_type,
+                                               args.dropout, entire=args.residual_spk_attn, attn_type=args.attn_type,
                                                same=args.same_encoder)
-        if args.multi_modal and args.mm_type in ['lcat', 'add', 'gate']:
+        if len(self.args.modals) > 1 and args.mm_type in ['lcat', 'add', 'gate']:
             if 'a' in self.modals:
                 self.a_encoder = copy.deepcopy(trm_encoder)
                 self.a_fc = nn.Linear(args.audio_dim, args.utr_dim)
@@ -597,7 +597,7 @@ class new_ERC_HTRM(nn.Module):
         if args.use_spk_emb:
             self.spk_embedding = nn.Embedding(self.n_speakers, args.utr_dim)
 
-        if args.multi_modal and args.mm_type == 'lcat':
+        if  len(self.modals) > 1 and args.mm_type == 'lcat':
             in_dim = len(self.modals) * args.utr_dim
         else:
             in_dim = args.utr_dim
@@ -619,7 +619,7 @@ class new_ERC_HTRM(nn.Module):
         content_masks = content_masks.reshape(-1, content_shape[-1]) #[n*B, L]
         seg_ids = torch.zeros_like(content_ids).cuda()
 
-        if self.args.multi_modal and self.args.mm_type in ['lcat', 'add', 'gate']:
+        if len(self.args.modals) > 1 and self.args.mm_type in ['lcat', 'add', 'gate']:
             features = []
             if 'l' in self.args.modals:
                 l_out = self.bert_encoder(content_ids, segments=seg_ids, input_masks=content_masks, texf=texf)

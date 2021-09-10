@@ -15,3 +15,14 @@ same_encoder: 表示所有attentionmask使用同一个encoder，否则每个atte
 use_utt_text_features: 文本模态使用提取好的特征，否则就finetune bert
 mm_type: ecat lcat可选，分别表示前拼接和每个模态过一个encoder后拼接
 bert_path: huggineface 库里的名字 
+
+if dataset == 'MELD':
+    path = '/data1/lyc/HTRM/data/MELD/MELD_features_raw.pkl'
+elif dataset == 'IEMOCAP':
+    path = '/data1/lyc/HTRM/data/IEMOCAP/IEMOCAP_features.pkl'
+elif dataset == 'DailyDialog':
+    path = '/data1/lyc/HTRM/data/DailyDialog/DailyDialog.pkl'
+elif dataset == 'EmoryNLP':
+    path = '/data1/lyc/HTRM/data/EmoryNLP/EmoryNLP.pkl'
+elif dataset == 'M3ED':
+    path = '/data1/lyc/HTRM_for_M3ED/data/M3ED.pkl'

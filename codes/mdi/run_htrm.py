@@ -1,6 +1,6 @@
 import os
 import numpy as np, argparse, time, random
-
+import time
 np.set_printoptions(threshold=np.inf)
 import torch
 import torch.nn as nn
@@ -184,8 +184,9 @@ def get_result_path(args):
     if args.bert_path != 'bert-base-uncased':
         path += '_' + args.bert_path
 
-    return os.path.join(args.result_dir, path)
+    path = path + '_' + str(args.run_idx)
 
+    return os.path.join(args.result_dir, path)
 
 def save_model(path, model):
     output_model_file = os.path.join(path, WEIGHTS_NAME)
@@ -197,12 +198,12 @@ def save_model(path, model):
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     tokenizer.save_vocabulary(path)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--result_dir', type=str, default=None)
     parser.add_argument('--feat_path', type=str, default=None)
+    parser.add_argument('--run_idx', type=int, default=None)
     
     parser.add_argument('--bert_path', type=str, default='bert-base-uncased')
     parser.add_argument('--bert_feature_type', type=str, choices=['cls', 'mpl', 'cat', 'pool', 'l4m'], default='cls',
@@ -303,12 +304,11 @@ if __name__ == '__main__':
     result_path = get_result_path(args)
     if not os.path.exists(result_path):
         os.makedirs(result_path)
-    logging_path = os.path.join(result_path, time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime())  + '.log')
-    logger = get_logger(logging_path)
-
+    logging_path = os.path.join(result_path, 'log')
+    if not os.path.exists(logging_path):
+        os.makedirs(logging_path)
+    logger = get_logger(logging_path, suffix='self')
     logger.info(args)
-
-    import time
     seed = int(time.time() % 1000)
     logger.info("random seed: {}".format(seed))
     seed_everything(seed)
@@ -329,12 +329,11 @@ if __name__ == '__main__':
     n_epochs = args.epochs
     batch_size = args.batch_size
 
-    train_loader, valid_loader, test_loader = get_HTRM_loaders_htrm(logger, dataset=args.dataset_name, batch_size=batch_size, bert_path=args.bert_path)
-
+    train_loader, valid_loader, test_loader = get_HTRM_loaders_htrm(logger, feat_path=args.feat_path, dataset=args.dataset_name, 
+                                                    batch_size=batch_size, bert_path=args.bert_path)
     emo_emb = None
     logger.info('building model..')
     model = new_ERC_HTRM(args, n_classes, use_cls=True, emo_emb=emo_emb)
-    #model = AutoModelBert(args, num_labels=n_classes)
 
     try:
         init_weights(model.trm_encoder, init_type=args.init_type)
