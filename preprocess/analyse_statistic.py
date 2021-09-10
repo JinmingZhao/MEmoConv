@@ -7,7 +7,7 @@ import numpy as np
 import openpyxl
 import collections
 from collections import Counter
-from FileOps import read_xls, read_file
+from FileOps import read_xls, read_file, read_pkl
 from anno_check import compute_fleiss_kappa, compute_fleiss_kappa_noother
 
 def compute_global_fleiss_kappa(movies_names):
@@ -100,6 +100,67 @@ def compute_spk_age_gender(movies_names, dialog_spk_info_filepath):
     print(f'Gender distribution {gender2count}')
     print(f'Age distribution {age2count}')
 
+def remove_lowfreq_mul_emo(mul_emo):
+    # total 集合中小于5次的去掉
+    low_mul_emo = ['Anger,Happy', 'Disgust,Happy', 'Disgust,Sad,Anger', 'Fear,Disgust', 'Fear,Surprise', 'Fear,Surprise,Anger', 
+    'Sad,Anger,Surprise', 'Surprise,Disgust,Anger', 'Happy,Disgust', 'Happy,Sad', 'Sad,Anger,Disgust', 'Sad,Disgust,Anger', 
+    'Happy,Anger', 'Neutral,Anger,Sad', 'Neutral,Fear', 'Neutral,Surprise']
+    if mul_emo in low_mul_emo:
+        return True
+    else:
+        return False
+
+def get_dialog_emotion_interactions(dialog2emos, dialog2spks):
+    emotion_shift, emotion_inertia = [], []
+    intra_emotion_inertia, intra_emotion_shift = [], []
+    # 统计情感turn之间的情感变化组合
+    for dialog_id in dialog2emos.keys():
+        dialog_emos = dialog2emos[dialog_id]
+        dialog_spks = dialog2spks[dialog_id]
+        assert len(dialog_emos) == len(dialog_spks)
+        pre_spk = dialog_spks[0]
+        pre_emo = dialog_emos[0]
+        # print(f'\t dialog id {dialog_id}')
+        for spk, emo in zip(dialog_spks[1:], dialog_emos[1:]):
+            if spk != pre_spk:
+                # spk 不同表示turn发生改变
+                if emo == pre_emo:
+                    emotion_inertia.append('{}_{}'.format(pre_emo, emo))
+                else:
+                    emotion_shift.append('{}_{}'.format(pre_emo, emo))
+                    # print(f'emotion_shift {pre_emo} -> {emo}')
+                pre_spk = spk
+                pre_emo = emo     
+    # 统计情感turn内的情感变化组合
+    for dialog_id in dialog2emos.keys():
+        dialog_emos = dialog2emos[dialog_id]
+        dialog_spks = dialog2spks[dialog_id]
+        pre_spk = dialog_spks[0]
+        turn_emos = [dialog_emos[0]]
+        # print(f'\t dialog id {dialog_id}')
+        # print(dialog_spks)
+        for spk, emo in zip(dialog_spks[1:], dialog_emos[1:]):
+            if spk == pre_spk:
+                turn_emos.append(emo)
+            else:
+                # analyse 
+                if len(turn_emos) > 1:
+                    # print('turn emos {}'.format(turn_emos))
+                    pre_emo = turn_emos[0]
+                    for emo in turn_emos[1:]:
+                        if emo == pre_emo:
+                            intra_emotion_inertia.append('{}_{}'.format(pre_emo, emo))
+                            # print(f'intra emotion_inertia {pre_emo} -> {emo}')
+                        else:
+                            intra_emotion_shift.append('{}_{}'.format(pre_emo, emo))
+                            # print(f'intra emotion_shift {pre_emo} -> {emo}')
+                            pre_emo = emo
+                # new turn
+                turn_emos = []
+                turn_emos.append(emo)
+                pre_spk = spk
+    return emotion_shift, emotion_inertia, intra_emotion_inertia, intra_emotion_shift
+
 def compute_emotion_distribution(movies_names):
     '''
     turn 间的情感变化 inter-shift, inter-inertia 和 turn 内的情感变化 intra-shift, intra-inertia
@@ -109,7 +170,7 @@ def compute_emotion_distribution(movies_names):
     emotion_shift, emotion_inertia = [], []
     intra_emotion_inertia, intra_emotion_shift = [], []
     for movie_name in movies_names:
-        print('Current movie {}'.format(movie_name))
+        # print('Current movie {}'.format(movie_name))
         meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels/meta_{}.xlsx'.format(movie_name)
         all_instances = read_xls(meta_fileapth, sheetname='sheet1', skip_rows=1)
         dialog2emos = {}
@@ -140,72 +201,46 @@ def compute_emotion_distribution(movies_names):
                 dialog2spks[dialog_id] = [spk]
             else:
                 dialog2spks[dialog_id] += [spk]
-        # 统计情感turn之间的情感变化组合
-        for dialog_id in dialog2emos.keys():
-            dialog_emos = dialog2emos[dialog_id]
-            dialog_spks = dialog2spks[dialog_id]
-            assert len(dialog_emos) == len(dialog_spks)
-            pre_spk = dialog_spks[0]
-            pre_emo = dialog_emos[0]
-            # print(f'\t dialog id {dialog_id}')
-            for spk, emo in zip(dialog_spks[1:], dialog_emos[1:]):
-                if spk != pre_spk:
-                    # spk 不同表示turn发生改变
-                    if emo == pre_emo:
-                        emotion_inertia.append(pre_emo+'_'+emo)
-                    else:
-                        emotion_shift.append(pre_emo+'_'+emo)
-                        # print(f'emotion_shift {pre_emo} -> {emo}')
-                    pre_spk = spk
-                    pre_emo = emo     
-        # 统计情感turn内的情感变化组合
-        for dialog_id in dialog2emos.keys():
-            dialog_emos = dialog2emos[dialog_id]
-            dialog_spks = dialog2spks[dialog_id]
-            pre_spk = dialog_spks[0]
-            turn_emos = [dialog_emos[0]]
-            # print(f'\t dialog id {dialog_id}')
-            # print(dialog_spks)
-            for spk, emo in zip(dialog_spks[1:], dialog_emos[1:]):
-                if spk == pre_spk:
-                    turn_emos.append(emo)
-                else:
-                    # analyse 
-                    if len(turn_emos) > 1:
-                        # print('turn emos {}'.format(turn_emos))
-                        pre_emo = turn_emos[0]
-                        for emo in turn_emos[1:]:
-                            if emo == pre_emo:
-                                intra_emotion_inertia.append(pre_emo+'_'+emo)
-                                # print(f'intra emotion_inertia {pre_emo} -> {emo}')
-                            else:
-                                intra_emotion_shift.append(pre_emo+'_'+emo)
-                                # print(f'intra emotion_shift {pre_emo} -> {emo}')
-                                pre_emo = emo
-                    # new turn
-                    turn_emos = []
-                    turn_emos.append(emo)
-                    pre_spk = spk
-    multi_emo_rate = sum(multi_emos2count.values()) / sum(final_emo2count.values())
-    print(f'multi-emo distribution {multi_emos2count}')
-    print(f'multi-emo rate {multi_emo_rate}')
-    print(f'final_emo2count rate {final_emo2count}')
+        movie_emotion_shift, movie_emotion_inertia, movie_intra_emotion_inertia, movie_intra_emotion_shift = get_dialog_emotion_interactions(dialog2emos, dialog2spks)
+        emotion_shift.extend(movie_emotion_shift)
+        emotion_inertia.extend(movie_emotion_inertia)
+        intra_emotion_inertia.extend(movie_intra_emotion_inertia)
+        intra_emotion_shift.extend(movie_intra_emotion_shift)
+    multi_emos2count = sorted(multi_emos2count.items(), key = lambda kv:(kv[1], kv[0]), reverse=True)
+    new_multi_emos2count = collections.OrderedDict()
+    for tup in multi_emos2count:
+        mul_emo, count = tup
+        if not remove_lowfreq_mul_emo(mul_emo):
+            new_multi_emos2count[mul_emo] = count
+        else:
+            print('remove {}'.format(tup))
+    multi_emo_num = sum(new_multi_emos2count.values())
+    multi_emo_rate = multi_emo_num / sum(final_emo2count.values())
+    print(f'** sorted multi-emo distribution {new_multi_emos2count}')
+    print(f'** multi-emo num {multi_emo_num} rate {multi_emo_rate}')
+
+    final_emo2count = sorted(final_emo2count.items(), key = lambda kv:(kv[1], kv[0]))
+    print(f'sorted final_emo2count distribution {final_emo2count}')
     emotion_shift_count = len(emotion_shift)
     emotion_inertia_count = len(emotion_inertia)
     print(f'emotion shift {emotion_shift_count}')  
     print(f'emotion inertia {emotion_inertia_count}')
     emo_shift2count = Counter(emotion_shift)
-    print(f'emotion shift distribution {emo_shift2count}')
+    emo_shift2count = sorted(emo_shift2count.items(), key = lambda kv:(kv[1], kv[0]))
+    print(f'sorted emotion shift distribution {emo_shift2count}')
     emo_inertia2count = Counter(emotion_inertia)
-    print(f'emotion inertia distribution {emo_inertia2count}')
+    emo_inertia2count = sorted(emo_inertia2count.items(), key = lambda kv:(kv[1], kv[0]))
+    print(f'sorted emotion inertia distribution {emo_inertia2count}')
     # intra-turn emotion shift and inertia
     intra_emotion_shift_count = len(intra_emotion_shift)
     intra_emotion_inertia_count = len(intra_emotion_inertia)
     print(f'intra emotion shift {intra_emotion_shift_count}')  
     print(f'intra emotion inertia {intra_emotion_inertia_count}')
     intra_emo_shift2count = Counter(intra_emotion_shift)
+    intra_emo_shift2count = sorted(intra_emo_shift2count.items(), key = lambda kv:(kv[1], kv[0]))
     print(f'intra  emotion shift distribution {intra_emo_shift2count}')
     intra_emo_inertia2count = Counter(intra_emotion_inertia)
+    intra_emo_inertia2count = sorted(intra_emo_inertia2count.items(), key = lambda kv:(kv[1], kv[0]))
     print(f'intra  emotion inertia distribution {intra_emo_inertia2count}')
 
 def get_basic_info(movies_names, statistic_filepath):
@@ -226,6 +261,60 @@ def get_basic_info(movies_names, statistic_filepath):
     avg_utts_dialog = round(count_utts/count_dialogs, 2)
     print('movies {} dialogs {} turns {} utts {} avg_turns {}, avg_utts_turn {} avg_utts_dialog {}'.format(
             count_movies, count_dialogs, count_turns, count_utts, avg_turns_dialog, avg_utts_turn, avg_utts_dialog))
+
+def analys_meld_emotion_distribution(meld_filepath):
+    all_data = read_pkl(meld_filepath)
+    spk_info_data = all_data[1]
+    label_info_data = all_data[2]
+    video_ids = list(spk_info_data.keys())
+    assert len(spk_info_data) == len(label_info_data)
+    print('total video ids {} {}'.format(len(video_ids), video_ids[:10]))
+    dialog2emos = {}
+    dialog2spks = {}
+    dialog2turns = {}
+    dialog2utts = {}
+    for dialog_id in video_ids:
+        spk_info = spk_info_data[dialog_id]
+        label_info = label_info_data[dialog_id]
+        assert len(spk_info) == len(label_info)
+        num_turns = 0
+        cur_spk = np.argmax(spk_info[0])
+        for utt_id in range(len(label_info)):
+            spk = np.argmax(spk_info[utt_id]) # 0~10的one-hot
+            final_emo = label_info[utt_id]
+            if dialog2emos.get(dialog_id) is None:
+                dialog2emos[dialog_id] = [final_emo]
+            else:    
+                dialog2emos[dialog_id] += [final_emo]
+            if dialog2spks.get(dialog_id) is None:
+                dialog2spks[dialog_id] = [spk]
+            else:
+                dialog2spks[dialog_id] += [spk]
+            if spk != cur_spk:
+                num_turns += 1
+        dialog2utts[dialog_id] = len(label_info)
+        dialog2turns[dialog_id] = num_turns
+    print('total turns {} avg turns {}'.format(sum(dialog2turns.values()), sum(dialog2turns.values())/len(dialog2turns)))
+    print('total utts {} avg utts {}'.format(sum(dialog2utts.values()), sum(dialog2utts.values())/len(dialog2utts)))
+    emotion_shift, emotion_inertia, intra_emotion_inertia, intra_emotion_shift = get_dialog_emotion_interactions(dialog2emos, dialog2spks)
+    print(f'emotion shift {len(emotion_shift)}')  
+    print(f'emotion inertia {len(emotion_inertia)}')
+    emo_shift2count = Counter(emotion_shift)
+    emo_shift2count = sorted(emo_shift2count.items(), key = lambda kv:(kv[1], kv[0]))
+    print(f'sorted emotion shift distribution {emo_shift2count}')
+    emo_inertia2count = Counter(emotion_inertia)
+    emo_inertia2count = sorted(emo_inertia2count.items(), key = lambda kv:(kv[1], kv[0]))
+    print(f'sorted emotion inertia distribution {emo_inertia2count}')
+    # intra-turn emotion shift and inertia
+    print(f'intra emotion shift {len(intra_emotion_shift)}')  
+    print(f'intra emotion inertia {len(intra_emotion_inertia)}')
+    intra_emo_shift2count = Counter(intra_emotion_shift)
+    intra_emo_shift2count = sorted(intra_emo_shift2count.items(), key = lambda kv:(kv[1], kv[0]))
+    print(f'intra  emotion shift distribution {intra_emo_shift2count}')
+    intra_emo_inertia2count = Counter(intra_emotion_inertia)
+    intra_emo_inertia2count = sorted(intra_emo_inertia2count.items(), key = lambda kv:(kv[1], kv[0]))
+    print(f'intra  emotion inertia distribution {intra_emo_inertia2count}')
+
 
 def write_meta_json_info():
     '''
@@ -255,26 +344,32 @@ def write_meta_json_info():
 
 if __name__ == '__main__':
 
-    set_name = 'total'
+    set_name = 'test'
     movies_names = read_file('movie_list_{}.txt'.format(set_name))
     movies_names = [movie_name.strip() for movie_name in movies_names]
     statistic_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/statistic.xlsx'
 
-    if True:
+    if False:
         get_basic_info(movies_names, statistic_filepath)
 
-    if True:
+    if False:
         compute_global_fleiss_kappa(movies_names)
     
-    if True:
+    if False:
         compute_corpus_duration(movies_names)
     
-    if True:
+    if False:
         dialog_spk_info_filepath = '/Users/jinming/Desktop/works/memoconv_final_labels/dialogSpkAnnoUpdate.xlsx'
         compute_spk_age_gender(movies_names, dialog_spk_info_filepath)
 
-    if True:
+    if False:
         compute_emotion_distribution(movies_names)
+    
+    if True:
+        meld_filepath = '/Users/jinming/Downloads/conv-emotion-master/DialogueRNN/DialogueRNN_features/MELD_features/MELD_features_raw.pkl'
+        analys_meld_emotion_distribution(meld_filepath)
+
+    
     
     
     

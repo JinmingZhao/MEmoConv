@@ -98,10 +98,11 @@ result_dir
     /data9/MEmoConv/memoconv/results/dialoggcn
 
 ### 对话中的情感 --模型
-
-
-
-
+DialogRNN  DialogGCN MMGCN
+#### 多标签分类
+step1: 清理目前的多标签数据，去除出现次数小于5次/10次的，去除一下明显不合理的多标签
+step2: 在dialogRNN的基础上进行测试，看看torch中的多标签的方式是否有提升。
+https://www.zhihu.com/question/358811772/answer/920451413
 
 
 
