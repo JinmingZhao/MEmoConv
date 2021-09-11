@@ -108,7 +108,7 @@ def init_weights(net, init_type='normal', init_gain=0.02):
 
 def get_result_path(args):
     path = ''
-    path += args.dataset_name + '_'
+    path += args.dataset_name + '_' + args.modals + '_'
 
     if args.use_trm:
         path += 'trm_'
@@ -128,7 +128,6 @@ def get_result_path(args):
         path += 'layers-' + str(args.trm_layers) + '_'
         path += 'heads-' + str(args.trm_heads) + '_'
         path += 'dim-' + str(args.trm_ff_dim) + '_'
-        path += args.modals + '_'
     else:
         path += 'bert_'
 
@@ -147,23 +146,23 @@ def get_result_path(args):
         path += args.bert_feature_type + '_'
         path += str(args.bert_dim) + '_'
 
-    path += 'mlp-' + str(args.mlp_layers) + '_'
+    path += 'cmlp-' + str(args.mlp_layers) + '_'
 
     if args.use_spk_attn:
         if args.same_encoder:
-            path += 's'
+            path += 'share'
         path += '-'
         if args.residual_spk_attn:
-            path += 'residual'
+            path += 'residual_'
         path += 'spkattn-'
-        attn_type_dict = {'global':'g', 'intra': 'i', 'inter': 'o',
-                          'local': 'l', 'lin': 'x', 'lout': 'y', 'seq': 's', 'reseq': 'r'}
+        attn_type_dict = {'global':'g', 'intra': 'i', 'inter': 'o', 'local': 'l'}
         for key in attn_type_dict.keys():
             if key in args.attn_type:
                 path += attn_type_dict[key]
-        if 'local' in args.attn_type or 'lin' in args.attn_type or 'lout' in args.attn_type:
+        if 'local' in args.attn_type:
             path += str(args.local_window)
         path += '-'
+    
     if args.use_spk_emb:
         path += 'spkemb_'
 
@@ -181,10 +180,7 @@ def get_result_path(args):
     path += 'dp-' + str(args.dropout)
     path += 'ep-' + str(args.epochs)
 
-    if args.bert_path != 'bert-base-uncased':
-        path += '_' + args.bert_path
-
-    path = path + '_' + str(args.run_idx)
+    path = path + '_run' + str(args.run_idx)
 
     return os.path.join(args.result_dir, path)
 
@@ -234,9 +230,9 @@ if __name__ == '__main__':
     parser.add_argument('--use_spk_attn', action='store_true', default=False)
 
     parser.add_argument('--residual_spk_attn', action='store_true', default=False)
-    parser.add_argument('--attn_type', type=str, nargs='+', choices=['global','inter','intra','local','lout','lin','seq','reseq'],
+    parser.add_argument('--attn_type', type=str, nargs='+', choices=['global','inter','intra','local'],
                         default=['global', 'inter', 'intra', 'local'])
-    parser.add_argument('--second_attn_type', type=str, nargs='+', choices=['global','inter','intra','local','lout','lin','seq','reseq'],
+    parser.add_argument('--second_attn_type', type=str, nargs='+', choices=['global','inter','intra','local'],
                         default=['global', 'inter', 'intra', 'local'])
     parser.add_argument('--local_window', type=int, default=8)
 
@@ -255,7 +251,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=2e-5, metavar='LR', help='learning rate')
     parser.add_argument('--lr2', type=float, default=5e-5, metavar='LR2', help='learning rate of trm structure')
     parser.add_argument('--dropout', type=float, default=0.1, metavar='dropout', help='dropout rate')
-    parser.add_argument('--batch_size', type=int, default=1, metavar='BS', help='batch size')
+    parser.add_argument('--batch_size', type=int, default=1, metavar='BS', help='current model only support batch size=1')
     parser.add_argument('--epochs', type=int, default=2, metavar='E', help='number of epochs')
     parser.add_argument('--mm_type', type=str, choices=['lcat', 'ecat', 'add', 'gate', 'eadd', 'egate'], default='ecat')
     parser.add_argument('--modals', type=str, choices=['l', 'a', 'v', 'al', 'vl', 'av', 'avl'], default='avl')
@@ -273,20 +269,16 @@ if __name__ == '__main__':
         args.visual_dim = 342
         args.patience = 2
         args.max_bert_batch = 32
-        args.batch_size = 1
     elif args.dataset_name == 'IEMOCAP':
         n_classes = 6
         args.audio_dim = 100
         args.visual_dim = 512
         args.patience = 6
         args.max_bert_batch = 8
-        args.batch_size = 1
     elif args.dataset_name == 'DailyDialog':
-        args.batch_size = 1
         n_classes = 7
         args.max_bert_batch = 16
     elif args.dataset_name == 'EmoryNLP':
-        args.batch_size = 1
         n_classes = 7
         args.max_bert_batch = 16
     elif args.dataset_name == 'M3ED':
@@ -295,7 +287,6 @@ if __name__ == '__main__':
         args.visual_dim = 342
         args.text_dim = 768
         args.max_bert_batch = 32
-        args.batch_size = 1
     if args.no_early_stop:
         args.patience = args.epochs
     if args.use_utt_text_features:
@@ -388,7 +379,7 @@ if __name__ == '__main__':
                     valid_metrics['loss'], valid_metrics['acc'], valid_metrics['fscore'],
                     test_metrics['loss'], test_metrics['acc'], test_metrics['fscore'],
                     round(time.time() - start_time, 2), lr))
-        #early stop
+        # early stop
         if args.patience != 0 and e - args.patience > 0:
             fscore_window = [item[1]['fscore'] for item in all_metrics[e-args.patience:]]
             if max(fscore_window) < best_vadfscore:

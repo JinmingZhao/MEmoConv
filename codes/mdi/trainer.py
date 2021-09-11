@@ -69,6 +69,7 @@ def train_or_eval_model_for_htrm(model, loss_function, dataloader, args, optimiz
 
         content_ids, labels, content_masks, content_lengths, \
         speaker_ids, segment_masks, audio_features, visual_features, text_features = data
+        # print('batch audio data {}'.format(audio_features.shape))
         content_ids = content_ids.cuda()
         content_masks = content_masks.cuda()
         speaker_ids = speaker_ids.cuda()
@@ -88,7 +89,6 @@ def train_or_eval_model_for_htrm(model, loss_function, dataloader, args, optimiz
         loss = loss_function(logits, labels)
 
         labels = labels.cpu().numpy() #[B, n]
-        #print('truth          \t', labels[0, :20])
         preds = torch.argmax(logits, dim=1).cpu().numpy()
         all_labels.append(labels)
         all_preds.append(preds)

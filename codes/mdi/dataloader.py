@@ -91,12 +91,7 @@ if __name__ == '__main__':
 
     logger = get_logger('test.log')
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-    train_loader, valid_loader, test_loader, speaker_vocab, label_vocab, _ = get_loaders_htrm(logger,
-                                                                                                      dataset_name=args.dataset_name,
-                                                                                                      batch_size=args.batch_size,
-                                                                                                      args=args)
-    train_loader2, valid_loader2, test_loader2 = get_MELD_loaders_htrm(logger, args.batch_size)
-
+    train_loader, valid_loader, test_loader = get_HTRM_loaders_htrm(logger, args.batch_size)
     for i, (data1, data2) in enumerate(zip(train_loader, train_loader2)):
         content_ids1, labels1, _, _, _, _ = data1
         content_ids2, labels2, _, _, _, _, _, _ = data2

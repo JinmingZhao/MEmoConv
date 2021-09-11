@@ -23,3 +23,6 @@ elif dataset == 'EmoryNLP':
     path = '/data1/lyc/HTRM/data/EmoryNLP/EmoryNLP.pkl'
 elif dataset == 'M3ED':
     path = '/data1/lyc/HTRM_for_M3ED/data/M3ED.pkl'
+
+
+## [Bug] 不支持 attention 机制不支持 batch-size大于1的情况

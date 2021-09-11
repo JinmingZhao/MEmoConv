@@ -121,7 +121,8 @@ class AutoModelBert(nn.Module):
 
 
 def get_local_attention_mask(length, batch, window, nheads=4):
-    #mask: B*heads, n, n
+    # local attention mask
+    # mask: B*heads, n, n
     attention_matrix = torch.zeros((batch, length, length)).cuda()
     for i in range(0, min(window, length)):
         temp = torch.eye(length-i).cuda()
@@ -141,9 +142,11 @@ def get_local_attention_mask(length, batch, window, nheads=4):
 
 
 def get_seq_attention_mask(length, batch, reverse=False, nheads=4):
+    # global attention mask
+    print(length, batch)
     attention_matrix = torch.zeros((batch, length, length)).cuda()
     if not reverse:
-        attention_matrix += torch.triu(torch.ones(length, length),diagonal=0).cuda()
+        attention_matrix += torch.triu(torch.ones(length, length), diagonal=0).cuda()
     else:
         attention_matrix += torch.tril(torch.ones(length, length), diagonal=0).cuda()
     attention_mask = (attention_matrix == 0)
@@ -154,10 +157,10 @@ def get_seq_attention_mask(length, batch, reverse=False, nheads=4):
     heads_attn_mask = torch.cat(heads_attn_mask, dim=0)  # B*heads, n, n
     return torch.cuda.BoolTensor(heads_attn_mask)
 
-
 def get_attention_mask(speaker_ids, mode="inter", nheads=4):
     #inter: speaker间，speaker相同为0，不同为1；intra：speaker内，speaker相同为1，不同为0
     #speaker_ids: [n, B]
+    # print('mode {} speaker ids {}'.format(mode, speaker_ids))
     temp_speaker_ids = speaker_ids.transpose(0, 1)
     #result: [B, n, n]
     #L -> [n, n]: speaker_ids行向量复制L次，分别减去L列向量，如果结果为0说明speaker相同，否则不同
@@ -166,14 +169,14 @@ def get_attention_mask(speaker_ids, mode="inter", nheads=4):
     matrix = matrix_a - matrix_b
     attention_mask = torch.zeros_like(matrix, dtype=torch.uint8)
     if mode == "inter":
-        attention_mask = ((matrix + torch.eye(matrix.shape[-1], dtype=torch.uint8).cuda())==0) #True不允许attention，False允许
+        attention_mask = ((matrix + torch.eye(matrix.shape[-1], dtype=torch.uint8).cuda())==0) # True不允许attention，False允许
     elif mode == "intra":
-        attention_mask = (matrix!=0) #B, n, n
+        attention_mask = (matrix!=0) # B, n, n
+    # print('---- results is OK on bs=1: {}'.format(attention_mask))
 
     heads_attn_mask = []
     for b in range(len(attention_mask)):
         heads_attn_mask.append(attention_mask[b].unsqueeze(0).repeat(nheads, 1, 1)) #heads, n, n
-
     heads_attn_mask = torch.cat(heads_attn_mask, dim=0) #B*heads, n, n
     return torch.cuda.BoolTensor(heads_attn_mask)
 
@@ -181,13 +184,12 @@ def get_attention_mask(speaker_ids, mode="inter", nheads=4):
 class speaker_TRM(nn.Module):
     def __init__(self, layers, in_dim, n_heads, ff_dim, dropout,
                  entire=False, attn_type=('global', 'intra', 'inter', 'local'),
-                 same=False, extra=False, window=8):
+                 same=False, window=3):
         super().__init__()
         self.layers = layers
         self.n_heads = n_heads
-        self.entire = entire #entire 只进行一次交互 否则每层一次交互
+        self.entire = entire  # entire 只进行一次交互 否则每层一次交互
         self.attn_type = attn_type
-        self.extra = extra
         self.window = window
 
         encoder_layer = nn.TransformerEncoderLayer(in_dim, nhead=n_heads,
@@ -207,14 +209,6 @@ class speaker_TRM(nn.Module):
                 self.inter_encoder = encoder
             if 'local' in attn_type:
                 self.local_encoder = encoder
-            if 'lin' in attn_type:
-                self.lin_encoder = encoder
-            if 'lout' in attn_type:
-                self.lout_encoder = encoder
-            if 'seq' in attn_type:
-                self.seq_encoder = encoder
-            if 'reseq' in attn_type:
-                self.reseq_encoder = encoder
         else:
             if 'global' in attn_type:
                 self.global_encoder = copy.deepcopy(encoder)
@@ -224,40 +218,17 @@ class speaker_TRM(nn.Module):
                 self.inter_encoder = copy.deepcopy(encoder)
             if 'local' in attn_type:
                 self.local_encoder = copy.deepcopy(encoder)
-            if 'lin' in attn_type:
-                self.lin_encoder = copy.deepcopy(encoder)
-            if 'lout' in attn_type:
-                self.lout_encoder = copy.deepcopy(encoder)
-            if 'seq' in attn_type:
-                self.seq_encoder = copy.deepcopy(encoder)
-            if 'reseq' in attn_type:
-                self.reseq_encoder = copy.deepcopy(encoder)
 
     def forward(self, inputs, src_key_padding_mask, speaker_ids, mask=None): #[n, B, utr_dim]
         features = inputs
-        if self.extra:
-            inter_mask, intra_mask, local_mask, seq_mask, reseq_mask = \
-                copy.deepcopy(mask), copy.deepcopy(mask), copy.deepcopy(mask), copy.deepcopy(mask), copy.deepcopy(mask)
-            inter_mask[:, :speaker_ids.shape[0], :speaker_ids.shape[0]] = get_attention_mask(speaker_ids, mode="inter", nheads=self.n_heads)
-            intra_mask[:, :speaker_ids.shape[0], :speaker_ids.shape[0]] = get_attention_mask(speaker_ids, mode="intra", nheads=self.n_heads)
-            local_mask[:, :speaker_ids.shape[0], :speaker_ids.shape[0]] = \
-                get_local_attention_mask(speaker_ids.shape[0], speaker_ids.shape[1], self.window, nheads=self.n_heads)
-            seq_mask[:, :speaker_ids.shape[0], :speaker_ids.shape[0]] = \
-                get_seq_attention_mask(speaker_ids.shape[0], speaker_ids.shape[1], False, nheads=self.n_heads)
-            reseq_mask[:, :speaker_ids.shape[0], :speaker_ids.shape[0]] = \
-                get_seq_attention_mask(speaker_ids.shape[0], speaker_ids.shape[1], True, nheads=self.n_heads)
-        else:
-            inter_mask = get_attention_mask(speaker_ids, mode="inter", nheads=self.n_heads)
+        if 'intra' in self.attn_type:
             intra_mask = get_attention_mask(speaker_ids, mode="intra", nheads=self.n_heads)
+        if 'inter' in self.attn_type:
+            inter_mask = get_attention_mask(speaker_ids, mode="inter", nheads=self.n_heads)
+        if 'local' in self.attn_type:
             local_mask = get_local_attention_mask(speaker_ids.shape[0], speaker_ids.shape[1], self.window, nheads=self.n_heads)
-            seq_mask = get_seq_attention_mask(speaker_ids.shape[0], speaker_ids.shape[1], False, nheads=self.n_heads)
-            reseq_mask = get_seq_attention_mask(speaker_ids.shape[0], speaker_ids.shape[1], True, nheads=self.n_heads)
-        lin_mask = local_mask | intra_mask
-        lout_mask = local_mask | inter_mask
-        global_features, intra_features, inter_features, local_features, lin_features, lout_features, seq_features, \
-        reseq_features = torch.zeros_like(features).cuda(), torch.zeros_like(features).cuda(), torch.zeros_like(features).cuda(), \
-            torch.zeros_like(features).cuda(), torch.zeros_like(features).cuda(), torch.zeros_like(features).cuda(), \
-            torch.zeros_like(features).cuda(), torch.zeros_like(features).cuda()
+        global_features, local_features, intra_features, inter_features = torch.zeros_like(features).cuda(), \
+                                torch.zeros_like(features).cuda(), torch.zeros_like(features).cuda(), torch.zeros_like(features).cuda()
         if self.entire:
             if 'global' in self.attn_type:
                 global_features = self.global_encoder(features, mask=mask, src_key_padding_mask=src_key_padding_mask)
@@ -267,16 +238,7 @@ class speaker_TRM(nn.Module):
                 inter_features = self.inter_encoder(features, mask=inter_mask, src_key_padding_mask=src_key_padding_mask)
             if 'local' in self.attn_type:
                 local_features = self.local_encoder(features, mask=local_mask, src_key_padding_mask=src_key_padding_mask)
-            if 'lin' in self.attn_type:
-                lin_features = self.lin_encoder(features, mask=lin_mask, src_key_padding_mask=src_key_padding_mask)
-            if 'lin' in self.attn_type:
-                lout_features = self.lout_encoder(features, mask=lout_mask, src_key_padding_mask=src_key_padding_mask)
-            if 'seq' in self.attn_type:
-                seq_features = self.seq_encoder(features, mask=seq_mask, src_key_padding_mask=src_key_padding_mask)
-            if 'reseq' in self.attn_type:
-                reseq_features = self.reseq_encoder(features, mask=reseq_mask, src_key_padding_mask=src_key_padding_mask)
-            features = global_features + intra_features + inter_features + local_features + lin_features + lout_features\
-                        + seq_features + reseq_features
+            features = global_features + intra_features + inter_features + local_features
         else:
             for l in range(self.layers):
                 if 'global' in self.attn_type:
@@ -287,23 +249,9 @@ class speaker_TRM(nn.Module):
                     inter_features = self.inter_encoder[l](features, src_mask=inter_mask, src_key_padding_mask=src_key_padding_mask)
                 if 'local' in self.attn_type:
                     local_features = self.local_encoder[l](features, src_mask=local_mask, src_key_padding_mask=src_key_padding_mask)
-                if 'lin' in self.attn_type:
-                    lin_features = self.lin_encoder[l](features, src_mask=lin_mask, src_key_padding_mask=src_key_padding_mask)
-                if 'lout' in self.attn_type:
-                    lout_features = self.lout_encoder[l](features, src_mask=lout_mask, src_key_padding_mask=src_key_padding_mask)
-                if 'seq' in self.attn_type:
-                    seq_features = self.seq_encoder[l](features, src_mask=seq_mask, src_key_padding_mask=src_key_padding_mask)
-                if 'reseq' in self.attn_type:
-                    reseq_features = self.reseq_encoder[l](features, src_mask=reseq_mask, src_key_padding_mask=src_key_padding_mask)
-                features = global_features + intra_features + inter_features + local_features + lin_features + lout_features \
-                           + seq_features + reseq_features
+                features = global_features + intra_features + inter_features + local_features
         features = self.norm(features)
         return features
-
-
-def _get_clones(module, N):
-    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
-
 
 class MMGatedAttention(nn.Module):
 
