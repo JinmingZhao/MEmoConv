@@ -98,13 +98,29 @@ result_dir
     /data9/MEmoConv/memoconv/results/dialoggcn
 
 ### 对话中的情感 --模型
-DialogRNN  DialogGCN MMGCN
+DialogRNN  DialogGCN MMGCN HRSM
+
+
 #### 多标签分类
 step1: 清理目前的多标签数据，去除出现次数小于5次/10次的，去除一下明显不合理的多标签
 step2: 在dialogRNN的基础上进行测试，看看torch中的多标签的方式是否有提升。
 https://www.zhihu.com/question/358811772/answer/920451413
 
+多标签的情感分布:
+sorted multi-emo distribution [('Anger,Happy', 1), ('Disgust,Happy', 1), ('Disgust,Sad,Anger', 1), ('Fear,Disgust', 1), ('Fear,Surprise', 1), ('Fear,Surprise,Anger', 1), ('Sad,Anger,Surprise', 1), ('Surprise,Disgust,Anger', 1), ('Happy,Disgust', 2), ('Happy,Sad', 2), ('Sad,Anger,Disgust', 2), ('Sad,Disgust,Anger', 2), ('Happy,Anger', 3), ('Neutral,Anger,Sad', 3), ('Neutral,Fear', 3), ('Neutral,Surprise', 4), ('Anger,Disgust,Sad', 5), ('Disgust,Sad', 5), ('Anger,Sad,Disgust', 6), ('Surprise,Fear', 7), ('Anger,Fear', 9), ('Disgust,Neutral', 10), ('Disgust,Surprise', 11), ('Sad,Surprise', 11), ('Anger,Neutral', 13), ('Surprise,Disgust', 13), ('Neutral,Disgust', 15), ('Fear,Anger', 18), ('Surprise,Sad', 19), ('Sad,Disgust', 23), ('Sad,Neutral', 29), ('Anger,Surprise', 30), ('Neutral,Anger', 30), ('Happy,Surprise', 38), ('Happy,Neutral', 39), ('Surprise,Happy', 40), ('Surprise,Anger', 55), ('Neutral,Happy', 85), ('Neutral,Sad', 88), ('Sad,Fear', 93), ('Fear,Sad', 97), ('Disgust,Anger', 312), ('Sad,Anger', 340), ('Anger,Sad', 481), ('Anger,Disgust', 705)]
+去掉频率小于5次的组合, 去掉的部分的多情感标注跟主情感一致.
 
+# 统计Meld数据集中是否包含turn内情感转变，以及平均每个对话的turn数目以及每个turn内的句子数目
+/Users/jinming/Downloads/conv-emotion-master/DialogueRNN/DialogueRNN_features/MELD_features/MELD_features_raw.pkl
+emotion shift 6108
+emotion inertia 3382
+intra emotion shift 987
+intra emotion inertia 1196
+total dialog: 1432
+total turns 7740 avg turns 5.405027932960894
+total utts 13708 avg utts 9.572625698324023
+avg utts/turn = 1.77
 
-
-
+对比我们的 990对话，9082turns, 
+平均9.17turn/dialog and 24.7 utterance/dialog 2.69utterance/turn
+我们对话轮数目更多，所以存在对话间的交互更多.
