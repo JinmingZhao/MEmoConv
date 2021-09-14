@@ -36,6 +36,7 @@ def parse_args():
     parser.add_argument("--gpuid", type=int, default=0)
     parser.add_argument("--cvNo", type=int, default=0)
     parser.add_argument("--corpus_name", type=str, default='chmed')
+    parser.add_argument("--add_special_person_token", action="store_true")
     parser.add_argument(
         "--train_file", type=str, default=None, help="A csv or a json file containing the training data."
     )
@@ -175,6 +176,9 @@ def main():
     config = AutoConfig.from_pretrained(args.model_name_or_path, num_labels=num_labels)
     #print('config', config)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
+    if args.add_special_person_token:
+        tokenizer.additional_special_tokens = '[unused88]'
+        print(tokenizer.special_tokens_map)
 
     # 如何获取 state_dict 呢？只加载模型层，不加载分类层. 只可能出现在训练阶段
     if args.restore_pt_checkpoint is not None and args.train_file is not None:
