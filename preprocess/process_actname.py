@@ -1,8 +1,7 @@
 '''
 将每部电影中出现的人名统一替换为 PERSON, 在送入Bert的时候可以用 [uncased88] special token 替换.
 '''   
-from preprocess.FileOps import read_csv
-from FileOps import read_file, read_xls
+from FileOps import read_file, read_xls, read_csv, write_csv
 
 if __name__ == '__main__':    
     movies_names = read_file('../preprocess/movie_list_total.txt')
@@ -14,8 +13,8 @@ if __name__ == '__main__':
         # 根据每部电影的spk的名字，进行替换成 PERSON 这个token.
         for movie_name in movies_names:
             print(f'Current movie {movie_name}')
-            meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels_csv/meta_{}.cvs'.format(movie_name)
-            new_meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels_csv_personname/meta_{}.cvs'.format(movie_name)
+            meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels_csv/meta_{}.csv'.format(movie_name)
+            new_meta_fileapth = '/Users/jinming/Desktop/works/memoconv_final_labels_csv_personname/meta_{}.csv'.format(movie_name)
             all_instances = read_xls(dialog_spk_info_filepath, sheetname=movie_name, skip_rows=0)
             movie_act_names = []
             actor_names = all_instances[0][1:]
@@ -42,4 +41,14 @@ if __name__ == '__main__':
                 else:
                     new_movie_act_names.append(m_name)
             print(new_movie_act_names)
-            all_instances = read_csv(meta_fileapth)
+            new_instances = []
+            all_instances = read_csv(meta_fileapth, delimiter=';', skip_rows=1)
+            new_instances.append(all_instances[0])
+            for instance in all_instances:
+                _,_,_,text = instance[:4]
+                for m_name in new_movie_act_names:
+                    if m_name in text:
+                        text = text.replace(m_name, '[unused88]')
+                instance[3] = text
+                new_instances.append(instance)
+            write_csv(new_meta_fileapth, new_instances, delimiter=';')
