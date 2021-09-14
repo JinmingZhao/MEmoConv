@@ -30,3 +30,8 @@ Sentence-Level Feature for Text
     1. sen_avg_bert 
     2. sen_cls_bert
     3. finetune_cls_roberta  
+
+## 如何添加新的token.
+需求，对话中的人名都替换为了 [PERSON], 可以在已经模型的基础上，利用一个 unused token 来表示 [PERSON]
+1. 手动添加一个新的special token, 还要 修改 vocab, 修改token.json
+2. 直接将文本中的 [PERSON] 修改为 [unused88]

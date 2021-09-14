@@ -72,6 +72,7 @@ class BertExtractor(object):
     def extract_sentence(self, sentence: str):
         # sentence without cls and sep and the tokenizer will auto add these
         ids = self.tokenizer.encode(sentence)
+        print(ids)
         ids = torch.tensor(ids).unsqueeze(0)
         feats = self.model(ids.to(self.device))[0]
         # save two special tokens: fisrt index vector is cls and last index is sep
@@ -118,10 +119,10 @@ def get_sentence_level_ft(sent_type, output_ft_filepath):
 
 if __name__ == '__main__':
     # export PYTHONPATH=/data9/MEmoConv
-    # CUDA_VISIBLE_DEVICES=7 python extract_text_ft.py
-    if False:
-        # demo of extract text features
-        sentence = '我们开始健身吧'
+    # CUDA_VISIBLE_DEVICES=6 python extract_text_ft.py
+    if True:
+        # demo of extract text feature
+        sentence = '[PAD][PERSON]我们和[PERSON]开始健身吧'
         extract_bert = BertExtractor(device=0, model_name='robert_base_wwm_chinese')
         feature = extract_bert(sentence)
         print(feature.shape) # (9, 768) fisrt is cls and last is sep
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     feat_type = 'bert_base_chinese4chmed'
     all_output_ft_filepath = '/data9/memoconv/modality_fts/text/movies/all_text_ft_{}.pkl'.format(feat_type)
     all_text_info_filepath = '/data9/memoconv/modality_fts/text/movies/all_text_info.pkl'
-    movies_names = read_file('../preprocess/movie_list.txt')
+    movies_names = read_file('../preprocess/movie_list_total.txt')
     movies_names = [movie_name.strip() for movie_name in movies_names]
     movie2uttID2ft = collections.OrderedDict()
     movie2uttID2text = collections.OrderedDict()

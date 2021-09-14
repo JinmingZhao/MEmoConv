@@ -2,6 +2,7 @@
 import numpy as np
 import pickle
 import torch
+import random
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 from transformers import BertTokenizer
@@ -16,7 +17,7 @@ def load_vocab(dataset_name):
 
 
 class HTRMDataset(Dataset):
-    def __init__(self, path, batch_size, tokenizer, dataset='MELD', dev='train', n_classes=6,
+    def __init__(self, path, batch_size, tokenizer, dataset='MELD', setname='train', n_classes=6,
                  start_tok='[CLS]', end_tok='[SEP]'):
         self.path = path
         self.batch_size = batch_size
@@ -42,38 +43,38 @@ class HTRMDataset(Dataset):
         self.start_tok, self.end_tok = start_tok, end_tok
 
         if dataset == 'MELD':
-            if dev == 'train':
+            if setname == 'train':
                 self.keys = [x for x in range(0, 1039)]
-            elif dev == 'valid':
+            elif setname == 'valid':
                 self.keys = [x for x in range(1039, 1153)]
-            elif dev == 'test':
+            elif setname == 'test':
                 self.keys = [x for x in range(1153, 1433)]
         elif dataset == 'IEMOCAP':
             valid_rate = 0 #自定义, 默认0.05
             _, _, _, _, _, _, _, trainVid, testVid = pickle.load(open(path, 'rb'), encoding='latin1')
-            if dev == 'train':
+            if setname == 'train':
                 self.keys = trainVid[:-20]
-            elif dev == 'valid':
+            elif setname == 'valid':
                 self.keys = trainVid[-20:]
-            elif dev == 'test':
+            elif setname == 'test':
                 self.keys = testVid
         elif dataset == 'DailyDialog' or dataset == 'EmoryNLP':
             _, _, _, train, valid, test = pickle.load(open(path, 'rb'), encoding='latin1')
-            if dev == 'train':
+            if setname == 'train':
                 self.keys = train
-            elif dev == 'valid':
+            elif setname == 'valid':
                 self.keys = valid
-            elif dev == 'test':
+            elif setname == 'test':
                 self.keys = test
         elif dataset == 'M3ED':
             _, _, _, _, _, _, _, train, valid, test = pickle.load(open(path, 'rb'), encoding='latin1')
-            if dev == 'train':
+            if setname == 'train':
                 self.keys = train
-            elif dev == 'valid':
+            elif setname == 'valid':
                 self.keys = valid
-            elif dev == 'test':
+            elif setname == 'test':
                 self.keys = test
-
+        self.setname = setname
         self.dialog_num = 0
         self.sentence_num = 0
         self.n_classes = n_classes
@@ -104,9 +105,12 @@ class HTRMDataset(Dataset):
         for index in self.keys:
             if index not in videoSentence.keys():
                 self.keys.remove(index) #MELD缺少一条数据
-
-        self.keys = sorted(self.keys,key = lambda x:len(videoLabels[x]))
-        #print(len(self.keys), self.keys)
+        
+        # 训练集合随机shuffle.
+        if self.setname  == 'train':
+            random.shuffle(self.keys)
+        # self.keys = sorted(self.keys,key = lambda x:len(videoLabels[x]))
+        # print(len(self.keys), self.keys)
 
         dataset = []
         for i in range(0, len(self.keys), self.batch_size):

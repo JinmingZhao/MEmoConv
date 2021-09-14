@@ -1,43 +1,8 @@
 import pickle
-from torch.utils.data.sampler import SubsetRandomSampler
-from torch.utils.data import DataLoader
-import os
 import argparse
-import numpy as np
 from  transformers import BertTokenizer, AutoTokenizer
-import time, json
+import json
 from codes.mdi.dataset import HTRMDataset
-
-def load_vocab(dataset_name):
-    speaker_vocab = pickle.load(open('../data/%s/speaker_vocab.pkl' % (dataset_name), 'rb'))
-    label_vocab = pickle.load(open('../data/%s/label_vocab.pkl' % (dataset_name), 'rb'))
-    person_vec = None
-    return speaker_vocab, label_vocab, person_vec
-
-def read_datas(dataset_name, batch_size):
-    # training set
-    with open('../data/%s/train_data.json' % (dataset_name), encoding='utf-8') as f:
-        train_raw = json.load(f)
-    #train_raw = sorted(train_raw,key = lambda x:len(x)) #dialog长度排序
-    new_train_raw = []
-    for i in range(0, len(train_raw), batch_size):
-        new_train_raw.append(train_raw[i:i+batch_size])
-
-    with open('../data/%s/dev_data.json' % (dataset_name), encoding='utf-8') as f:
-        dev_raw = json.load(f)
-    #dev_raw = sorted(dev_raw,key = lambda x:len(x))
-    new_dev_raw = []
-    for i in range(0, len(dev_raw), batch_size):
-        new_dev_raw.append(dev_raw[i:i+batch_size])
-
-    with open('../data/%s/test_data.json' % (dataset_name), encoding='utf-8') as f:
-        test_raw = json.load(f)
-    #test_raw = sorted(test_raw,key = lambda x:len(x))
-    new_test_raw = []
-    for i in range(0, len(test_raw), batch_size):
-        new_test_raw.append(test_raw[i:i+batch_size])
-
-    return new_train_raw, new_dev_raw, new_test_raw
 
 def get_HTRM_loaders_htrm(logger, feat_path, dataset='MELD', batch_size=32, bert_path='bert-base-uncased'):
     if dataset == 'IEMOCAP':
@@ -61,9 +26,9 @@ def get_HTRM_loaders_htrm(logger, feat_path, dataset='MELD', batch_size=32, bert
     else:
         start_tok, end_tok = '[CLS]', '[SEP]'
 
-    trainsets = HTRMDataset(feat_path, batch_size, tokenizer, dataset=dataset, dev='train', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
-    devsets = HTRMDataset(feat_path, batch_size, tokenizer, dataset=dataset, dev='valid', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
-    testsets = HTRMDataset(feat_path, batch_size, tokenizer, dataset=dataset, dev='test', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
+    trainsets = HTRMDataset(feat_path, batch_size, tokenizer, dataset=dataset, setname='train', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
+    devsets = HTRMDataset(feat_path, batch_size, tokenizer, dataset=dataset, setname='valid', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
+    testsets = HTRMDataset(feat_path, batch_size, tokenizer, dataset=dataset, setname='test', n_classes=n_classes, start_tok=start_tok, end_tok=end_tok)
 
     for name, dataset in zip(['Train', 'Valid', 'Test'], [trainsets, devsets, testsets]):
         logger.info('{} set: {} dialogs, {} sentences'.format(name, dataset.dialog_num, dataset.sentence_num))
