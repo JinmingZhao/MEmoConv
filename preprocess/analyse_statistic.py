@@ -366,9 +366,8 @@ if __name__ == '__main__':
         compute_emotion_distribution(movies_names)
     
     if True:
-        meld_filepath = '/Users/jinming/Downloads/conv-emotion-master/DialogueRNN/DialogueRNN_features/MELD_features/MELD_features_raw.pkl'
+        meld_filepath = '/Users/jinming/Desktop/research_works/ACL2022/otherFeatures/MELD_features_raw.pkl'
         analys_meld_emotion_distribution(meld_filepath)
-
     
     
     
