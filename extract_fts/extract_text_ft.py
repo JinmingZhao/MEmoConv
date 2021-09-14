@@ -61,6 +61,8 @@ class BertExtractor(object):
         elif model_name == 'robert':
             print('Using RobertaTokenizer tokenizer')
             self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_path)
+            self.tokenizer.additional_special_tokens = '[unused88]'
+            # print(self.tokenizer.special_tokens_map)
         elif model_name == 'transformer-xl':
             self.tokenizer = TransfoXLTokenizer.from_pretrained('transfo-xl-wt103')
             self.tokenizer.pad_token = '[PAD]'
@@ -122,7 +124,7 @@ if __name__ == '__main__':
     # CUDA_VISIBLE_DEVICES=6 python extract_text_ft.py
     if True:
         # demo of extract text feature
-        sentence = '[PAD][PERSON]我们和[PERSON]开始健身吧'
+        sentence = '[PAD][unused88]我们和[unused88]开始健身吧'
         extract_bert = BertExtractor(device=0, model_name='robert_base_wwm_chinese')
         feature = extract_bert(sentence)
         print(feature.shape) # (9, 768) fisrt is cls and last is sep
