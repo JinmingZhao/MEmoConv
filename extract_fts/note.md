@@ -33,5 +33,8 @@ Sentence-Level Feature for Text
 
 ## 如何添加新的token.
 需求，对话中的人名都替换为了 [PERSON], 可以在已经模型的基础上，利用一个 unused token 来表示 [PERSON]
-1. 手动添加一个新的special token, 还要 修改 vocab, 修改token.json
-2. 直接将文本中的 [PERSON] 修改为 [unused88]
+1. 手动添加一个新的special token, 还要 修改 vocab, 修改token.json。 仿照其他的special token 利用 [unused88] 这个 position.
+self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_path)
+self.tokenizer.additional_special_tokens = '[unused88]'
+print(self.tokenizer.special_tokens_map) --Done
+2. 直接将文本中的 [PERSON] 修改为 [unused88] -- 方法不行，必须添加到 special token中才不会分词，否则会把 [unused88] 分成多个词。
