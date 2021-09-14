@@ -181,6 +181,7 @@ def get_result_path(args):
     path += 'ep-' + str(args.epochs)
 
     path = path + '_run' + str(args.run_idx)
+    path = path + '_' + str(args.suffix)
 
     return os.path.join(args.result_dir, path)
 
@@ -200,6 +201,7 @@ if __name__ == '__main__':
     parser.add_argument('--result_dir', type=str, default=None)
     parser.add_argument('--feat_path', type=str, default=None)
     parser.add_argument('--run_idx', type=int, default=None)
+    parser.add_argument('--suffix', type=str, default='self')
     
     parser.add_argument('--bert_path', type=str, default='bert-base-uncased')
     parser.add_argument('--bert_feature_type', type=str, choices=['cls', 'mpl', 'cat', 'pool', 'l4m'], default='cls',
@@ -231,8 +233,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--residual_spk_attn', action='store_true', default=False)
     parser.add_argument('--attn_type', type=str, nargs='+', choices=['global','inter','intra','local'],
-                        default=['global', 'inter', 'intra', 'local'])
-    parser.add_argument('--second_attn_type', type=str, nargs='+', choices=['global','inter','intra','local'],
                         default=['global', 'inter', 'intra', 'local'])
     parser.add_argument('--local_window', type=int, default=8)
 

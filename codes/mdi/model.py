@@ -119,10 +119,8 @@ class AutoModelBert(nn.Module):
 
         return logits
 
-
-def get_local_attention_mask(length, batch, window, nheads=4):
-    # local attention mask
-    # mask: B*heads, n, n
+def get_local_attention_mask(length, batch, seg_mask, window, nheads=4):
+    #mask: B*heads, n, n
     attention_matrix = torch.zeros((batch, length, length)).cuda()
     for i in range(0, min(window, length)):
         temp = torch.eye(length-i).cuda()
@@ -133,6 +131,12 @@ def get_local_attention_mask(length, batch, window, nheads=4):
             attention_matrix[:, i:, :-i] += temp
             attention_matrix[:, :-i, i:] += temp
     attention_mask = (attention_matrix == 0)
+
+    temp_seg_mask = seg_mask.unsqueeze(1).repeat(1, length, 1)
+    for b in range(batch):
+        attention_mask[b][temp_seg_mask[b]] = True
+        attention_mask[b][temp_seg_mask[b].T] = False
+    #print(attention_mask)
     heads_attn_mask = []
     for b in range(len(attention_mask)):
         heads_attn_mask.append(attention_mask[b].unsqueeze(0).repeat(nheads, 1, 1))  # heads, n, n
@@ -140,27 +144,9 @@ def get_local_attention_mask(length, batch, window, nheads=4):
     heads_attn_mask = torch.cat(heads_attn_mask, dim=0)  # B*heads, n, n
     return torch.cuda.BoolTensor(heads_attn_mask)
 
-
-def get_seq_attention_mask(length, batch, reverse=False, nheads=4):
-    # global attention mask
-    print(length, batch)
-    attention_matrix = torch.zeros((batch, length, length)).cuda()
-    if not reverse:
-        attention_matrix += torch.triu(torch.ones(length, length), diagonal=0).cuda()
-    else:
-        attention_matrix += torch.tril(torch.ones(length, length), diagonal=0).cuda()
-    attention_mask = (attention_matrix == 0)
-    heads_attn_mask = []
-    for b in range(len(attention_mask)):
-        heads_attn_mask.append(attention_mask[b].unsqueeze(0).repeat(nheads, 1, 1))  # heads, n, n
-
-    heads_attn_mask = torch.cat(heads_attn_mask, dim=0)  # B*heads, n, n
-    return torch.cuda.BoolTensor(heads_attn_mask)
-
-def get_attention_mask(speaker_ids, mode="inter", nheads=4):
+def get_attention_mask(speaker_ids, seg_mask, mode="inter", nheads=4):
     #inter: speaker间，speaker相同为0，不同为1；intra：speaker内，speaker相同为1，不同为0
-    #speaker_ids: [n, B]
-    # print('mode {} speaker ids {}'.format(mode, speaker_ids))
+    #speaker_ids: [n, B], seg_mask: [B, n]
     temp_speaker_ids = speaker_ids.transpose(0, 1)
     #result: [B, n, n]
     #L -> [n, n]: speaker_ids行向量复制L次，分别减去L列向量，如果结果为0说明speaker相同，否则不同
@@ -169,17 +155,21 @@ def get_attention_mask(speaker_ids, mode="inter", nheads=4):
     matrix = matrix_a - matrix_b
     attention_mask = torch.zeros_like(matrix, dtype=torch.uint8)
     if mode == "inter":
-        attention_mask = ((matrix + torch.eye(matrix.shape[-1], dtype=torch.uint8).cuda())==0) # True不允许attention，False允许
+        attention_mask = ((matrix + torch.eye(matrix.shape[-1], dtype=torch.uint8).cuda())==0) #True不允许attention，False允许
     elif mode == "intra":
-        attention_mask = (matrix!=0) # B, n, n
-    # print('---- results is OK on bs=1: {}'.format(attention_mask))
+        attention_mask = (matrix!=0) #B, n, n
+
+    temp_seg_mask = seg_mask.unsqueeze(1).repeat(1, seg_mask.shape[1], 1)
+    for b in range(seg_mask.shape[0]):
+        attention_mask[b][temp_seg_mask[b]] = True
+        attention_mask[b][temp_seg_mask[b].T] = False
 
     heads_attn_mask = []
     for b in range(len(attention_mask)):
         heads_attn_mask.append(attention_mask[b].unsqueeze(0).repeat(nheads, 1, 1)) #heads, n, n
+
     heads_attn_mask = torch.cat(heads_attn_mask, dim=0) #B*heads, n, n
     return torch.cuda.BoolTensor(heads_attn_mask)
-
 
 class speaker_TRM(nn.Module):
     def __init__(self, layers, in_dim, n_heads, ff_dim, dropout,
@@ -222,11 +212,11 @@ class speaker_TRM(nn.Module):
     def forward(self, inputs, src_key_padding_mask, speaker_ids, mask=None): #[n, B, utr_dim]
         features = inputs
         if 'intra' in self.attn_type:
-            intra_mask = get_attention_mask(speaker_ids, mode="intra", nheads=self.n_heads)
+            intra_mask = get_attention_mask(speaker_ids, src_key_padding_mask, mode="intra", nheads=self.n_heads)
         if 'inter' in self.attn_type:
-            inter_mask = get_attention_mask(speaker_ids, mode="inter", nheads=self.n_heads)
+            inter_mask = get_attention_mask(speaker_ids, src_key_padding_mask, mode="inter", nheads=self.n_heads)
         if 'local' in self.attn_type:
-            local_mask = get_local_attention_mask(speaker_ids.shape[0], speaker_ids.shape[1], self.window, nheads=self.n_heads)
+            local_mask = get_local_attention_mask(speaker_ids.shape[0], speaker_ids.shape[1], src_key_padding_mask, self.window, nheads=self.n_heads)
         global_features, local_features, intra_features, inter_features = torch.zeros_like(features).cuda(), \
                                 torch.zeros_like(features).cuda(), torch.zeros_like(features).cuda(), torch.zeros_like(features).cuda()
         if self.entire:
@@ -393,30 +383,24 @@ class BertEncoder(nn.Module):
         if not args.use_utt_text_features:
             self.textExtractor = AutoModel.from_pretrained(args.bert_path, config=modelConfig)
             embedding_dim = args.bert_dim
-        else:
-            embedding_dim = args.text_dim
 
-        fc_in_dim = embedding_dim
-        if args.bert_feature_type == 'cat':
-            fc_in_dim += embedding_dim
-
-        if len(args.modals) > 1 and args.mm_type == 'ecat':
+        if args.mm_type == 'ecat':
             fc_in_dim = 0
             if 'a' in args.modals:
                 fc_in_dim += args.audio_dim
             if 'v' in args.modals:
                 fc_in_dim += args.visual_dim
             if 'l' in args.modals:
-                fc_in_dim += args.text_dim
-        elif len(args.modals) > 1 and args.mm_type in ['eadd', 'egate']:
-            if 'a' in args.modals:
-                self.a_fc = nn.Linear(args.audio_dim, code_length)
-            if 'v' in args.modals:
-                self.v_fc = nn.Linear(args.visual_dim, code_length)
-            if 'l' in args.modals:
-                self.l_fc = nn.Linear(args.text_dim, code_length)
-            if args.mm_type == 'egate':
-                self.gate = MMGatedAttention(fc_in_dim, dropout=args.dropout)
+                # use text feature from bert branch
+                if not args.use_utt_text_features:
+                    fc_in_dim += embedding_dim 
+                else:
+                    fc_in_dim += args.text_dim
+        else:
+            print('[Warning not implemented] extended to the other fusion method')
+            pass
+            # if 'a' in args.modals:
+            #     self.a_fc = nn.Linear(args.audio_dim, code_length)
 
         if not self.args.bert_wo_fc:
             self.fc = nn.Linear(fc_in_dim, code_length)
@@ -459,7 +443,7 @@ class BertEncoder(nn.Module):
             features = texf.reshape(-1, texf.shape[-1])
 
         if not self.args.bert_wo_fc:
-            if len(self.args.modals) > 1 and self.args.mm_type == 'ecat':
+            if len(self.args.modals) > 0 and self.args.mm_type == 'ecat':
                 all_feat = []
                 if 'a' in self.args.modals:
                     all_feat.append(audf.reshape(-1, audf.shape[-1]))
@@ -468,7 +452,7 @@ class BertEncoder(nn.Module):
                 if 'l' in self.args.modals:
                     all_feat.append(features)
                 features = torch.cat(all_feat, dim=-1)
-            elif len(self.args.modals) > 1 and self.args.mm_type == 'eadd':
+            elif len(self.args.modals) > 0 and self.args.mm_type == 'eadd':
                 result_features = torch.zeros((features.shape[0], self.code_length))
                 if 'a' in self.args.modals:
                     result_features += self.a_fc(audf.reshape(-1, audf.shape[-1]))
@@ -477,7 +461,7 @@ class BertEncoder(nn.Module):
                 if 'l' in self.args.modals:
                     result_features += self.l_fc(features)
                 return self.act(result_features)
-            elif len(self.args.modals) > 1 and self.args.mm_type == 'egate':
+            elif len(self.args.modals) > 0 and self.args.mm_type == 'egate':
                 a_feat, v_feat = None, None
                 if 'a' in self.args.modals:
                     a_feat = self.a_fc(audf.reshape(-1, audf.shape[-1]))
@@ -527,7 +511,7 @@ class new_ERC_HTRM(nn.Module):
         trm_encoder = speaker_TRM(args.trm_layers, args.utr_dim, args.trm_heads, args.trm_ff_dim,
                                                args.dropout, entire=args.residual_spk_attn, attn_type=args.attn_type,
                                                same=args.same_encoder)
-        if len(self.args.modals) > 1 and args.mm_type in ['lcat', 'add', 'gate']:
+        if len(self.modals) > 0 and args.mm_type in ['lcat', 'add', 'gate']:
             if 'a' in self.modals:
                 self.a_encoder = copy.deepcopy(trm_encoder)
                 self.a_fc = nn.Linear(args.audio_dim, args.utr_dim)
@@ -545,7 +529,7 @@ class new_ERC_HTRM(nn.Module):
         if args.use_spk_emb:
             self.spk_embedding = nn.Embedding(self.n_speakers, args.utr_dim)
 
-        if  len(self.modals) > 1 and args.mm_type == 'lcat':
+        if  len(self.modals) > 0 and args.mm_type == 'lcat':
             in_dim = len(self.modals) * args.utr_dim
         else:
             in_dim = args.utr_dim
