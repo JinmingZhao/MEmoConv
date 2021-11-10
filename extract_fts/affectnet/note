@@ -3,10 +3,12 @@ val:
 train:
 {'Happiness': 134415, 'Neutral': 74874, 'Surprise': 14090, 'Sadness': 25459, 'Anger': 24882, 'Disgust': 3803, 'Fear': 6378, 'Contempt': 3750}
 Fer数据集的数据28K图片，类别也是8类 ['neu', 'hap', 'sur', 'sad', 'ang', 'dis', 'fea', 'con']
+FER train: Counter({0: 10342, 1: 7526, 2: 3576, 3: 3530, 4: 2464, 6: 654, 5: 193, 7: 167})
+FER val: Counter({0: 1342, 1: 898, 2: 458, 3: 416, 4: 319, 6: 75, 5: 36, 7: 25})
 10倍的数据希望能表现的更好。
 
 
-方案1: 将affectnet的数据都转成 fer 的数据格式 --Going
+方案1: 将affectnet的数据都转成 fer 的数据格式 --Done
 /data3/zjm/dataset/ferplus/npy_data 是处理好的灰度图输入 train/val 以及 对应的target.
 /data9/datasets/AffectNetDataset/npy_data
 /data9/datasets/AffectNetDataset/combine_with_fer/npy_data
@@ -15,7 +17,7 @@ affect_idx_to_class {"0":"Neutral", "1":"Happiness", "2":"Sadness", "3":"Surpris
 需要做一个转化到 fer_idx_to_class
 
 
-方案2: 采用affectnet的数据格式，官方的release的模型和方法 - Pending
+方案2: 采用affectnet的数据格式，官方的release的模型和方法 - Discard
 使用440,000的图片
 https://github.com/behzadhsni/BReG-NeXt
 https://arxiv.org/pdf/2004.08495.pdf

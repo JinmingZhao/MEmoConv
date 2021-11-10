@@ -30,17 +30,18 @@ ffmpeg -i fendou_2.mp4 -vn -f wav -acodec pcm_s16le -ac 1 -ar 16000 fendou_2.wav
 
 ## 采用讯飞的语音转写功能，使用双人对话场景，可以生成说话人，可以生成每个词对应的时间戳，完美契合我们的场景。
 目前的讯飞听见的字幕生成、讯飞听见都不行。
-等待开发者API的返回结果看看咋样。 --垃圾
+等待开发者API的返回结果看看咋样。 --垃圾 Discard
 
 
-##  找一个合适的demo
+##  找一个合适的demo --Done
 满足哪些要求呢？ 
 语音视觉清晰，情感丰富，情感变化比较多 不要求有多情感标注。
 最好是有turn内情感变化和turn之间的情感变化。 另外主题要符号通俗易懂且政治正确。
-
-anjia1
-xinlianaishidai_6
-yipuerzhu_15
-doutinghao_13
 fumuaiqing_1
 fumuaiqing_20
+
+## Update for 11/01 --DDL 11/15
+1. 论文修改，再过几遍，修改一遍，让李老师帮忙再修改一遍
+2. 模型修正，采用更高效的融合方法
+要求database的详细信息, datasheet, supplemental matrial  -- 准备一下，问问宇晴
+参考这篇论文 https://arxiv.org/abs/1803.09010
